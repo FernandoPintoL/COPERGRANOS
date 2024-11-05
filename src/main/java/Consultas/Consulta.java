@@ -137,8 +137,7 @@ public class Consulta {
             case Help.STOCK+"_"+Help.REP:{
                 //LocalTime hora_actual = LocalTime.parse(fecha_actual_time, "HH-mm-ss");
                 String name_pdf = Help.PATH+"PRODUCTO_ALMACEN.pdf";
-                System.out.println(name_pdf);
-                
+                System.out.println(name_pdf);                
                 List<String[]> lista = NEGOCIO_REPORTE.listarProductoAlmacen(name_pdf);
                 listWithReport(Help.productoAlmacenHeader, lista, msj,name_pdf);
                 break;
@@ -884,9 +883,9 @@ public class Consulta {
                     String moneda = msj.getParametros().get(1);
                     String estado_pago = msj.getParametros().get(2);
                     int compra_id = Integer.parseInt(msj.getParametros().get(3).trim());
-                    int metodopago_id = Integer.parseInt(msj.getParametros().get(4).trim());
-                    int transaccion_id = Integer.parseInt(msj.getParametros().get(5).trim());
-                    Object[] responsse = NEGOCIO_PAGO.guardar(monto, moneda, estado_pago, compra_id, metodopago_id, transaccion_id);
+                    String metodo_pago = msj.getParametros().get(4).trim();
+                    //int transaccion_id = Integer.parseInt(msj.getParametros().get(5).trim());
+                    Object[] responsse = NEGOCIO_PAGO.guardar(monto, moneda, estado_pago, compra_id, metodo_pago);
                     String message = (String) responsse[1];
                     sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
                 } else {
@@ -912,7 +911,8 @@ public class Consulta {
                     }
                     
                     String estado_pago = msj.getParametros().get(4);
-                    Object[] responsse = NEGOCIO_PAGO.modificar(id, monto, moneda, fecha_pago, estado_pago);
+                    String metodo_pago = msj.getParametros().get(5).trim();
+                    Object[] responsse = NEGOCIO_PAGO.modificar(id, monto, moneda, fecha_pago, estado_pago, metodo_pago);
                     String message = (String) responsse[1];
                     sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
                 } else {

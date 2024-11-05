@@ -99,6 +99,27 @@ public class Help {
                 + "</table>"
                 + "<h3 style=\"color:red\"> PARA MAS AYUDA ENVIE UN CORREO CON LA PALABRA <b> HELP </b> </h3>";
     }
+    
+    public static String listMensajeToPdf(String title, String[] header, List<String[]> listaObject) {
+        String response = "<h1>" + title.toUpperCase() + " - HELP</h1>"
+                + "<table style=\" border-collapse: collapse; width: 100%; border: 1px solid black;\"> \r\n\r\n";
+        response += trStart;
+        for (String head : header) {
+            response += thHeader(head);
+        }
+        response += trEnd;
+
+        for (String[] cadenas : listaObject) {
+            response += trStart;
+            for (String cad : cadenas) {
+                response += td(cad);
+            }
+            response += trEnd;
+        }
+        response += footerTable();
+        return response;
+    }
+    
 
     public static String listMensaje(String title, String[] header, List<String[]> listaObject) {
         String response = "Content-Type: text/html; charset=\"UTF-8\" \r\n\r\n"
@@ -251,23 +272,23 @@ public class Help {
         medida.addCaso(new Option("LISTAR MEDIDA", MEDIDA+"_LIS[];"));
 
         //METODOPAGO
-        CasosUso metodopago = new CasosUso("CU10. GESTIONAR METODO PAGO ");
+        /*CasosUso metodopago = new CasosUso("CU10. GESTIONAR METODO PAGO ");
         metodopago.addCaso(new Option("GUARDAR METODO PAGO", METODOPAGO + "_ADD[nombre];"));
         metodopago.addCaso(new Option("MODIFICAR METODO PAGO", METODOPAGO + "_MOD[id_metodopago, nombre];"));
         metodopago.addCaso(new Option("ELIMINAR METODO PAGO", METODOPAGO + "_DEL[id_metodopago];"));
         metodopago.addCaso(new Option("LISTAR METODO PAGO", METODOPAGO + "_LIS[];"));
-        metodopago.addCaso(new Option("VER METODO PAGO", METODOPAGO + "_VER[id_metodopago];"));
+        metodopago.addCaso(new Option("VER METODO PAGO", METODOPAGO + "_VER[id_metodopago];"));*/
 
         //PAGO
-        CasosUso pago = new CasosUso("CU11. GESTIONAR PAGO ");
-        pago.addCaso(new Option("GUARDAR PAGO", PAGO + "_ADD[monto, moneda, estado_pago, compra_id, metodopago_id, transaccionbancaria_id];"));
+        CasosUso pago = new CasosUso("CU10. GESTIONAR PAGO ");
+        pago.addCaso(new Option("GUARDAR PAGO", PAGO + "_ADD[monto, moneda, estado_pago, compra_id, metodo_pago];"));
         pago.addCaso(new Option("MODIFICAR PAGO", PAGO + "_MOD[id_pago, monto, moneda, estado_pago];"));
         pago.addCaso(new Option("ELIMINAR PAGO", PAGO + "_DEL[id_pago];"));
         pago.addCaso(new Option("LISTAR PAGO", PAGO + "_LIS[];"));
         pago.addCaso(new Option("VER PAGO", PAGO + "_VER[id_pago];"));
 
         //PERSONA
-        CasosUso persona = new CasosUso("CU12. GESTIONAR PERSONA ");
+        CasosUso persona = new CasosUso("CU11. GESTIONAR PERSONA ");
         persona.addCaso(new Option("GUARDAR " + PERSONA, PERSONA + "_ADD[nombre, direccion, telefono, correo, ci];"));
         persona.addCaso(new Option("MODIFICAR " + PERSONA, PERSONA + "_MOD[persona_id, nombre, direccion, telefono, correo, ci];"));
         persona.addCaso(new Option("ELIMINAR " + PERSONA, PERSONA + "_DEL[persona_id];"));
@@ -275,7 +296,7 @@ public class Help {
         persona.addCaso(new Option("VER " + PERSONA, PERSONA + "_VER[persona_id];"));
 
         //Precio   
-        CasosUso precio = new CasosUso("CU13. GESTIONAR PRECIO ");
+        CasosUso precio = new CasosUso("CU12. GESTIONAR PRECIO ");
         precio.addCaso(new Option("GUARDAR PRECIO", PRECIO+"_ADD[precio, detalle_medida];"));
         precio.addCaso(new Option("MODIFICAR PRECIO", PRECIO+"_MOD[id_precio,precio, detalle_medida];"));
         precio.addCaso(new Option("ELIMINAR PRECIO", PRECIO+"_DEL[id_precio];"));
@@ -283,7 +304,7 @@ public class Help {
         precio.addCaso(new Option("LISTAR PRECIO", PRECIO+"_LIS[];"));
 
         //Producto 
-        CasosUso producto = new CasosUso("CU14. GESTIONAR PRODUCTO ");
+        CasosUso producto = new CasosUso("CU13. GESTIONAR PRODUCTO ");
         producto.addCaso(new Option("GUARDAR PRODUCTO", PRODUCTO+"_ADD[nombre,codigo,descripcion,precio,categoria_id,medida_id];"));
         producto.addCaso(new Option("MODIFICAR PRODUCTO", PRODUCTO+"_MOD[id_producto,nombre,codigo,descripcion,precio,categoria_id,medida_id];"));
         producto.addCaso(new Option("ELIMINAR PRODUCTO", PRODUCTO+"_DEL[id_producto];"));
@@ -291,7 +312,7 @@ public class Help {
         producto.addCaso(new Option("LISTAR PRODUCTO", PRODUCTO+"_LIS[];"));
 
         //PROVEEDOR
-        CasosUso proveedor = new CasosUso("CU15. GESTIONAR PROVEEDOR ");
+        CasosUso proveedor = new CasosUso("CU14. GESTIONAR PROVEEDOR ");
         proveedor.addCaso(new Option("GUARDAR PROVEEDOR", PROVEEDOR + "_ADD[nombre, direccion, telefono, correo, ci,tipo_proveedor, descripcion];"));
         proveedor.addCaso(new Option("MODIFICAR PROVEEDOR", PROVEEDOR + "_MOD[id_proveedor,nombre, direccion, telefono, correo, ci, tipo_proveedor, descripcion];"));
         proveedor.addCaso(new Option("ELIMINAR PROVEEDOR", PROVEEDOR + "_DEL[id_proveedor];"));
@@ -299,7 +320,7 @@ public class Help {
         proveedor.addCaso(new Option("LISTAR PROVEEDOR", PROVEEDOR + "_LIS[];"));
 
         //SEGUIMIENTO
-        CasosUso seguimiento = new CasosUso("CU16. GESTIONAR SEGUIMIENTO ");
+        CasosUso seguimiento = new CasosUso("CU15. GESTIONAR SEGUIMIENTO ");
         seguimiento.addCaso(new Option("GUARDAR SEGUIMIENTO", SEGUIMIENTO + "_ADD[descripcion, ubicacion_actual, estado_actual, envio_id];"));
         seguimiento.addCaso(new Option("MODIFICAR SEGUIMIENTO", SEGUIMIENTO + "_MOD[id_seguimiento, descripcion, ubicacion_actual, estado_actual];"));
         seguimiento.addCaso(new Option("ELIMINAR SEGUIMIENTO", SEGUIMIENTO + "_DEL[id_seguimiento];"));
@@ -307,12 +328,12 @@ public class Help {
         seguimiento.addCaso(new Option("LISTAR SEGUIMIENTO", SEGUIMIENTO + "_LIS[];"));
 
         //TRANSACCIONBANCARIA
-        CasosUso transaccionbancaria = new CasosUso("CU17. GESTIONAR TRANSACCION BANCARIA ");
+        /*CasosUso transaccionbancaria = new CasosUso("CU17. GESTIONAR TRANSACCION BANCARIA ");
         transaccionbancaria.addCaso(new Option("GUARDAR TRANSACCIONBANCARIA", TRANSACCIONBANCARIA + "_ADD[num_transaccion, banco_origen, banco_destino];"));
         transaccionbancaria.addCaso(new Option("MODIFICAR TRANSACCIONBANCARIA", TRANSACCIONBANCARIA + "_MOD[id_transbanc, num_transaccion, banco_origen, banco_destino, fecha_transaccion];"));
         transaccionbancaria.addCaso(new Option("ELIMINAR TRANSACCIONBANCARIA", TRANSACCIONBANCARIA + "_DEL[id_transbanc];"));
         transaccionbancaria.addCaso(new Option("VER TRANSACCIONBANCARIA", TRANSACCIONBANCARIA + "_VER[id_transbanc];"));
-        transaccionbancaria.addCaso(new Option("LISTAR TRANSACCIONBANCARIA", TRANSACCIONBANCARIA + "_LIS[];"));
+        transaccionbancaria.addCaso(new Option("LISTAR TRANSACCIONBANCARIA", TRANSACCIONBANCARIA + "_LIS[];"));*/
 
         casos.add(administrativo);
         casos.add(almacen);
@@ -323,14 +344,14 @@ public class Help {
         casos.add(envio);
         casos.add(inventario);
         casos.add(medida);
-        casos.add(metodopago);
+        //casos.add(metodopago);
         casos.add(pago);
         casos.add(persona);
         casos.add(precio);
         casos.add(producto);        
         casos.add(proveedor);
         casos.add(seguimiento);
-        casos.add(transaccionbancaria);
+        //casos.add(transaccionbancaria);
         return casos;
     }
 

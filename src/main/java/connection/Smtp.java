@@ -79,7 +79,6 @@ public class Smtp extends Conexion {
             mailFrom(emisor);
             rcptTo(receptor);
             data();
-
             // Encabezados del correo
             String boundary = "==MyBoundary==";
             salida.writeBytes("MIME-Version: 1.0" + ConstSMPT.FINLINE);
@@ -112,7 +111,7 @@ public class Smtp extends Conexion {
             // Cerrar la conexión
             quit();
 
-        } catch (IOException e) {
+        } catch (IOException e) { 
             System.out.println("Error al enviar el correo: " + e.getMessage());
             e.printStackTrace(); // Muestra detalles completos del stack trace en la consola
         } catch (Exception e) {

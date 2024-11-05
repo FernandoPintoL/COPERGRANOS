@@ -26,7 +26,7 @@ public class COPERGRANOS {
                     cantidadMail = newCantidadEmail;
                     manage.newMensaje();
                 } else {
-                    System.out.println("No se encontro nuevo Mensaje");
+                    System.out.println("...");
                 }
                 try {
                     Thread.sleep(5000);

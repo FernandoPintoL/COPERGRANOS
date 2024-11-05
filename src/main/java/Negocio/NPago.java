@@ -16,15 +16,15 @@ public class NPago {
 
     public NPago() {}
 
-    public Object[] guardar(Double monto, String moneda, String estado_pago, int compra_id, int metodopago_id, int transaccionbancaria_id) throws SQLException, ParseException {
-        NEGOCIO_PAGO = new DPago(monto, moneda, estado_pago, compra_id, metodopago_id, transaccionbancaria_id);
+    public Object[] guardar(Double monto, String moneda, String estado_pago, int compra_id, String metodo_pago) throws SQLException, ParseException {
+        NEGOCIO_PAGO = new DPago(monto, moneda, estado_pago, compra_id, metodo_pago);
         Object[] response = NEGOCIO_PAGO.guardar();
         NEGOCIO_PAGO.desconectar();
         return response;
     }
 
-    public Object[] modificar(int id_pago, Double monto, String moneda, Date fecha_pago, String estado_pago) throws SQLException, ParseException {
-        NEGOCIO_PAGO = new DPago(id_pago, monto, moneda, fecha_pago, estado_pago);
+    public Object[] modificar(int id_pago, Double monto, String moneda, Date fecha_pago, String estado_pago, String metodo_pago) throws SQLException, ParseException {
+        NEGOCIO_PAGO = new DPago(id_pago, monto, moneda, fecha_pago, estado_pago, metodo_pago);
         Object[] response = NEGOCIO_PAGO.modificar();
         NEGOCIO_PAGO.desconectar();
         return response;

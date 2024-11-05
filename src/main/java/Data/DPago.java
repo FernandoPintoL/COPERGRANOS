@@ -27,8 +27,8 @@ public class DPago {
     private Date fecha_pago;
     private String estado_pago;
     private int compra_id;
-    private int metodopago_id;
-    private int trasaccion_id;
+    private String metodo_pago;
+    //private int trasaccion_id;
 
     public int getId() {
         return id;
@@ -86,21 +86,21 @@ public class DPago {
         this.compra_id = compra_id;
     }
 
-    public int getMetodopago_id() {
-        return metodopago_id;
+    public String getMetodopago() {
+        return metodo_pago;
     }
 
-    public void setMetodopago_id(int metodopago_id) {
-        this.metodopago_id = metodopago_id;
+    public void setMetodopago(String metodo_pago) {
+        this.metodo_pago = metodo_pago;
     }
 
-    public int getTrasaccion_id() {
+    /*public int getTrasaccion_id() {
         return trasaccion_id;
     }
 
     public void setTrasaccion_id(int trasaccion_id) {
         this.trasaccion_id = trasaccion_id;
-    }    
+    }*/    
 
     public DPago() {
     }
@@ -109,29 +109,29 @@ public class DPago {
         this.id = id;
     }
 
-    public DPago(double monto, String moneda, String estado_pago, int compra_id, int metodopago_id, int trasaccion_id) {
+    public DPago(double monto, String moneda, String estado_pago, int compra_id, String metodo_pago) {
         this.monto = monto;
         this.moneda = moneda;
         this.estado_pago = estado_pago;
         this.compra_id = compra_id;
-        this.metodopago_id = metodopago_id;
-        this.trasaccion_id = trasaccion_id;
+        this.metodo_pago = metodo_pago;
     }
 
-    public DPago(int id, double monto, String moneda, Date fecha_pago, String estado_pago) {
+    public DPago(int id, double monto, String moneda, Date fecha_pago, String estado_pago, String metodo_pago) {
         this.id = id;
         this.monto = monto;
         this.moneda = moneda;
         this.fecha_pago = fecha_pago;
         this.estado_pago = estado_pago;
+        this.metodo_pago = metodo_pago;
     }
         
     private final String TABLE = "pago";
     private final String QUERY_ID = "id_pago";
     private final String QUERY_INSERT = String.format(
-            "INSERT INTO %s (monto, moneda, fecha_pago, estado_pago, compra_id, metodopago_id, transaccionbancaria_id) VALUES (?,?,?,?,?,?,?)", TABLE);
+            "INSERT INTO %s (monto, moneda, fecha_pago, estado_pago, metodo_pago, compra_id) VALUES (?,?,?,?,?,?)", TABLE);
     private final String QUERY_UPDATE = String.format(
-            "UPDATE %s SET monto=?, moneda=?, fecha_pago=?, estado_pago=? WHERE %s=?", TABLE, QUERY_ID);
+            "UPDATE %s SET monto=?, moneda=?, fecha_pago=?, estado_pago=?, metodo_pago=? WHERE %s=?", TABLE, QUERY_ID);
     private final String QUERY_ELIMINAR = String.format("DELETE FROM %s WHERE %s=?", TABLE, QUERY_ID);
     private final String QUERY_VER = String.format("SELECT * FROM %s WHERE %s=?", TABLE, QUERY_ID);
     private final String QUERY_LIST = "SELECT * FROM " + TABLE;
@@ -148,8 +148,7 @@ public class DPago {
             String.valueOf(set.getDate("fecha_pago")),            
             String.valueOf(set.getString("estado_pago")),
             String.valueOf(set.getInt("compra_id")),
-            String.valueOf(set.getInt("metodopago_id")),
-            String.valueOf(set.getInt("transaccion_id"))
+            String.valueOf(set.getString("metodo_pago"))
         };
     }
     
@@ -160,6 +159,7 @@ public class DPago {
             ps.setString(2, getMoneda());
             ps.setDate(3, getFecha_pago());
             ps.setString(4, getEstado_pago());
+            ps.setString(5, getMetodopago());
         } catch (SQLException e) {
             // Manejar la excepción SQL
             System.out.println(MESSAGE_TRYCATCH + TABLE);
@@ -187,9 +187,7 @@ public class DPago {
             init_conexion();
             ps = connection.connect().prepareStatement(QUERY_INSERT);
             preparerState();
-            ps.setInt(5, getCompra_id());
-            ps.setInt(6, getMetodopago_id());        
-            ps.setInt(7, getTrasaccion_id());
+            ps.setInt(6, getCompra_id());
             int execute = ps.executeUpdate();
             isSuccess = execute > 0;
             if (isSuccess) {
@@ -232,7 +230,7 @@ public class DPago {
             init_conexion();
             ps = connection.connect().prepareStatement(QUERY_UPDATE);
             preparerState();
-            ps.setInt(5, getId());
+            ps.setInt(6, getId());
             int execute = ps.executeUpdate();
             isSuccess = execute > 0;
             if (isSuccess) {
