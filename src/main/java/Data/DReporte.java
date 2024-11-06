@@ -42,16 +42,19 @@ public class DReporte {
                                                         SELECT 
                                                             p.id_producto AS id_producto,
                                                             p.nombre AS producto_nombre,
-                                                            SUM(d.cantidad) AS total_vendido
+                                                            p.precio AS precio_unitario,
+                                                            SUM(dc.cantidad) AS cantidad_vendida,
+                                                            SUM(dc.subtotal) AS total_vendido
                                                         FROM 
                                                             producto p
                                                         JOIN 
-                                                            detallecompra d ON p.id_producto = d.producto_id
+                                                            detallecompra dc ON p.id = dc.id_producto
+                                                        JOIN 
+                                                            compra c ON dc.id_compra = c.id_compra
                                                         GROUP BY 
-                                                            p.id_producto, p.nombre
+                                                            p.id, p.nombre, p.precio
                                                         ORDER BY 
-                                                            total_vendido DESC
-                                                        LIMIT 1;
+                                                            total_vendido DESC;
                                                        """;
     private SQLConnection connection;
     private PreparedStatement ps;
@@ -141,7 +144,7 @@ public class DReporte {
         }
         return datas;
     }
-    
+
     public ResultSet productoVendido() throws SQLException {
         //List<String[]> datas = new ArrayList<>();
         ResultSet data;

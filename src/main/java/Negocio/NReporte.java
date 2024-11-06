@@ -5,8 +5,13 @@
 package Negocio;
 
 import Data.DReporte;
+import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
+import com.itextpdf.text.Element;
+import com.itextpdf.text.Font;
 import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
 import java.io.FileOutputStream;
@@ -22,64 +27,30 @@ import java.util.List;
 public class NReporte {
 
     DReporte NEGOCIO_REPORTE;
+    ReportGenerator reporte;
 
-    public List<String[]> listarProductoAlmacen(String name_pdfFilePath) throws SQLException {
+    public List<String[]> listarProductoAlmacen(String name_pdfFilePath, String chartFilePath) throws SQLException {
         NEGOCIO_REPORTE = new DReporte();
+        reporte = new ReportGenerator();
+        String[] encabezado = {"ID PRODUCTO", "ID ALMACEN", "CODIGO ALMACEN", "NOMBRE PRODUCTO", "STOCK"};
         ArrayList<String[]> listado = (ArrayList<String[]>) NEGOCIO_REPORTE.listarProductoAlmacen();
-        generatePdfReport(listado, name_pdfFilePath);
+        reporte.createPieChart(listado, chartFilePath, 3, 4);
+        //agregamos encabezado
+        listado.add(0, encabezado);
+        reporte.generatePdfReport(listado, name_pdfFilePath, chartFilePath);
         NEGOCIO_REPORTE.desconectar();
+        //QUITAMOS EL ENCABEZADO
+        listado.remove(0);
         return listado;
     }
 
     public List<String[]> listarProductoVendido() throws SQLException {
         NEGOCIO_REPORTE = new DReporte();
+        String[] encabezado = {"PRODUCTO ID", "PRODUCTO ALMACEN", "CODIGO ALMACEN", "NOMBRE PRODUCTO", "STOCK"};
         ArrayList<String[]> listado = (ArrayList<String[]>) NEGOCIO_REPORTE.listarProductoVendido();
+        listado.add(0, encabezado);
         NEGOCIO_REPORTE.desconectar();
         return listado;
-    }
-
-    public void generatePdfReport(ArrayList<String[]> data, String name_pdfFilePath) {
-        try {
-            System.out.println("DESDE EL NEGOCIO REPORTE");
-            // Crear el documento y el escritor de PDF
-            System.out.println(Arrays.toString(data.toArray()));
-            
-            Document document = new Document();
-            PdfWriter.getInstance(document, new FileOutputStream(name_pdfFilePath));
-            document.open();
-
-            // Agregar título al documento
-            document.add(new Paragraph("Reporte de Productos"));
-
-            if (data.isEmpty()) {
-                document.add(new Paragraph("No hay datos disponibles."));
-            } else {
-                // Determinar el número de columnas a partir del primer elemento
-                int numColumns = data.get(0).length;
-                PdfPTable table = new PdfPTable(numColumns);
-
-                // Agregar encabezados de columna (opcional, si tu ArrayList no tiene encabezados)
-                for (String header : data.get(0)) {
-                    table.addCell(header);
-                }
-
-                // Agregar datos al cuerpo de la tabla (a partir del segundo elemento)
-                for (int i = 1; i < data.size(); i++) {
-                    for (String cellData : data.get(i)) {
-                        table.addCell(cellData);
-                    }
-                }
-
-                // Agregar la tabla al documento
-                document.add(table);
-            }
-
-            // Cerrar el documento
-            document.close();
-            System.out.println("PDF generado: " + name_pdfFilePath);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
 }

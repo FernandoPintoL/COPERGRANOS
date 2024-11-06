@@ -87,7 +87,7 @@ public class Smtp extends Conexion {
 
             // Cuerpo del mensaje
             salida.writeBytes("--" + boundary + ConstSMPT.FINLINE);
-            salida.writeBytes("Content-Type: text/plain; charset=\"UTF-8\"" + ConstSMPT.FINLINE);
+            salida.writeBytes("Content-Type: text/html; charset=\"UTF-8\"" + ConstSMPT.FINLINE);
             salida.writeBytes(ConstSMPT.FINLINE);
             salida.writeBytes(mensaje + ConstSMPT.FINLINE);
 
@@ -122,7 +122,8 @@ public class Smtp extends Conexion {
     }
 }
 
-/*public void addAttachment(File pdfFile) throws IOException {
+/*
+    public void addAttachment(File pdfFile) throws IOException {
         String boundary = "=====CorreoConAdjunto=====";
         // Definir el encabezado para archivo adjunto
         comando = "MIME-Version: 1.0" + ConstSMPT.FINLINE;

@@ -35,6 +35,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 
 public class Consulta {
 
@@ -58,7 +59,7 @@ public class Consulta {
     private final NReporte NEGOCIO_REPORTE;
     // private Smtp smtp;
     private Pop3 pop3;
-    
+
     private String name_pdf = "reportes.pdf";
 
     public Consulta() throws IOException {
@@ -121,25 +122,33 @@ public class Consulta {
     }
 
     private void negocioAction(Mensaje msj) throws IOException, SQLException, ParseException {
-        String PARAMETROS_INCORRECTOS = "PARAMETROS INCORRECTOS | "+msj.getParametros();
+        String PARAMETROS_INCORRECTOS = "PARAMETROS INCORRECTOS | " + msj.getParametros();
         String DATE_INCORRECTO = "FECHA INCORRECTA | FORMATO CORRECTO (dd-MM-yyyy)";
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         LocalDate fecha_actual = LocalDate.now();
-        LocalTime fecha_actual_time = LocalTime.now();
         String tableAction = msj.tableAction();
-        System.out.println(tableAction);
+        LocalTime horaActual = LocalTime.now();
+        DateTimeFormatter formatter_time = DateTimeFormatter.ofPattern("HH-mm-ss");
+        String horaFormateada = horaActual.format(formatter_time);
         switch (tableAction) {
-            case Help.PRODUCTO_VENDIDO+"_"+Help.REP:{
+            case Help.PRODUCTO_VENDIDO + "_" + Help.REP: {
                 List<String[]> lista = NEGOCIO_REPORTE.listarProductoVendido();
                 list(Help.productoVendidoHeader, lista, msj);
                 break;
             }
-            case Help.STOCK+"_"+Help.REP:{
-                //LocalTime hora_actual = LocalTime.parse(fecha_actual_time, "HH-mm-ss");
-                String name_pdf = Help.PATH+"PRODUCTO_ALMACEN.pdf";
-                System.out.println(name_pdf);                
-                List<String[]> lista = NEGOCIO_REPORTE.listarProductoAlmacen(name_pdf);
-                listWithReport(Help.productoAlmacenHeader, lista, msj,name_pdf);
+            case Help.STOCK + "_" + Help.REP: {
+                String name_pdf = Help.PATH + "PRODUCTO_ALMACEN_" + horaFormateada + ".pdf";
+                String chart_image = Help.PATH + "PRODUCTO_ALMACEN_" + horaFormateada + ".png";
+                List<String[]> lista = NEGOCIO_REPORTE.listarProductoAlmacen(name_pdf, chart_image);
+
+                // Ver el contenido del listado
+                System.out.println("viendo el contenido que viene dese NEGOCIO");
+                for (String[] row : lista) {
+                    System.out.println(Arrays.toString(row));
+                }
+                System.out.println("------------------------------------");
+
+                listWithReport(Help.productoAlmacenHeader, lista, msj, name_pdf);
                 break;
             }
             //ADMINISTRATIVO
@@ -157,11 +166,11 @@ public class Consulta {
                     int ci = Integer.parseInt(msj.getParametros().get(4).trim());
                     String cargo = msj.getParametros().get(5);
                     if (nombre == null || nombre.trim().isEmpty() || nombre.length() <= 2) {
-                        sendMail(msj.getEmisor(), msj.evento()," El nombre es requerido. || Mayor a 3 caracteres.".toUpperCase());
+                        sendMail(msj.getEmisor(), msj.evento(), " El nombre es requerido. || Mayor a 3 caracteres.".toUpperCase());
                         break;
                     }
                     if (ci <= 0 || String.valueOf(ci).length() <= 2) {
-                        sendMail(msj.getEmisor(), msj.evento()," El CI es requerido y debe ser mayor a 0. || Mayor a 3 caracteres".toUpperCase());
+                        sendMail(msj.getEmisor(), msj.evento(), " El CI es requerido y debe ser mayor a 0. || Mayor a 3 caracteres".toUpperCase());
                         break;
                     }
                     Object[] responsse = NEGOCIO_ADMINISTRATIVO.guardar(nombre, direccion, telefono, correo, ci, cargo);
@@ -479,7 +488,7 @@ public class Consulta {
                     String estado = msj.getParametros().get(3);
                     Object[] responsse = NEGOCIO_COMPRA.modificar(id_compra, preciototal, fecha_compra, estado);
                     String message = (String) responsse[1];
-                    sendMail(msj.getEmisor(), msj.evento(),message.toUpperCase());
+                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
                 } else {
                     sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
                 }
@@ -585,7 +594,7 @@ public class Consulta {
                     String pais_destino = msj.getParametros().get(2);
                     String estado_envio = msj.getParametros().get(3);
                     //Date fecha_entrega = Date.valueOf(msj.getParametros().get(4));
-                    
+
                     Date fecha_entrega = Date.valueOf(fecha_actual);
                     try {
                         LocalDate fecha_correo = LocalDate.parse(msj.getParametros().get(4).trim(), formatter);
@@ -594,7 +603,7 @@ public class Consulta {
                         sendMail(msj.getEmisor(), msj.evento(), DATE_INCORRECTO + " " + fecha_entrega + " " + e.getMessage());
                         break;
                     }
-                    
+
                     String metodo_envio = msj.getParametros().get(5);
                     String transporte = msj.getParametros().get(6);
                     int compra_id = Integer.parseInt(msj.getParametros().get(7).trim());
@@ -610,7 +619,7 @@ public class Consulta {
                 if (msj.getParametros().size() == Help.LENPARAM9) {
                     int id = Integer.parseInt(msj.getParametros().get(0).trim());
                     //Date fecha_envio = Date.valueOf(msj.getParametros().get(1));
-                    
+
                     Date fecha_envio = Date.valueOf(fecha_actual);
                     try {
                         LocalDate fecha_correo = LocalDate.parse(msj.getParametros().get(1).trim(), formatter);
@@ -619,13 +628,13 @@ public class Consulta {
                         sendMail(msj.getEmisor(), msj.evento(), DATE_INCORRECTO + " " + fecha_envio + " " + e.getMessage());
                         break;
                     }
-                    
+
                     String direccion_envio = msj.getParametros().get(2);
                     String ciudad_envio = msj.getParametros().get(3);
                     String pais_destino = msj.getParametros().get(4);
                     String estado_envio = msj.getParametros().get(5);
                     //Date fecha_entrega = Date.valueOf(msj.getParametros().get(6));
-                    
+
                     Date fecha_entrega = Date.valueOf(fecha_actual);
                     try {
                         LocalDate fecha_correo1 = LocalDate.parse(msj.getParametros().get(6).trim(), formatter);
@@ -634,7 +643,7 @@ public class Consulta {
                         sendMail(msj.getEmisor(), msj.evento(), DATE_INCORRECTO + " " + fecha_entrega + " " + e.getMessage());
                         break;
                     }
-                    
+
                     String metodo_envio = msj.getParametros().get(7);
                     String transporte = msj.getParametros().get(8);
                     Object[] responsse = NEGOCIO_ENVIO.modificar(id, fecha_envio, direccion_envio, ciudad_envio, pais_destino, estado_envio, fecha_entrega, metodo_envio, transporte);
@@ -899,7 +908,7 @@ public class Consulta {
                     Double monto = Double.valueOf(msj.getParametros().get(1).trim());
                     String moneda = msj.getParametros().get(2);
                     //Date fecha_pago = Date.valueOf(msj.getParametros().get(3));
-                    
+
                     Date fecha_pago = Date.valueOf(fecha_actual);
                     try {
                         LocalDate local_fecha = LocalDate.parse(msj.getParametros().get(3).trim(), formatter);
@@ -909,7 +918,7 @@ public class Consulta {
                         sendMail(msj.getEmisor(), msj.evento(), DATE_INCORRECTO + fecha_pago + e.getMessage());
                         break;
                     }
-                    
+
                     String estado_pago = msj.getParametros().get(4);
                     String metodo_pago = msj.getParametros().get(5).trim();
                     Object[] responsse = NEGOCIO_PAGO.modificar(id, monto, moneda, fecha_pago, estado_pago, metodo_pago);
@@ -1364,9 +1373,9 @@ public class Consulta {
         String body = Help.listMensaje(msj.tableAction(), header, lista);
         sendMail(msj.getEmisor(), msj.evento(), body);
     }
-    
+
     private void listWithReport(String[] header, List<String[]> lista, Mensaje msj, String name_pdfFile) throws IOException {
-        String body = Help.listMensaje(msj.tableAction(), header, lista);
+        String body = Help.listMensajeToPdf(msj.tableAction(), header, lista);
         sendMailPdf(msj.getEmisor(), msj.evento(), body, name_pdfFile);
     }
 
@@ -1380,15 +1389,15 @@ public class Consulta {
         Smtp smtp = new Smtp(ConstGlobal.SERVIDOR, ConstGlobal.PORT_SMPT);
         smtp.sendMail(ConstGlobal.EMAIL, "<" + rcpt + ">", titulo, mensaje);
     }
-    
+
     private void sendMailPdf(String rcpt, String titulo, String mensaje, String name_pdfFile) throws IOException {
         System.out.println("rcpt: " + rcpt + "titulo: " + titulo + "mensaje: " + mensaje);
         Smtp smtp = new Smtp(ConstGlobal.SERVIDOR, ConstGlobal.PORT_SMPT);
         smtp.sendMailWithPdf(ConstGlobal.EMAIL, "<" + rcpt + ">", titulo, mensaje, name_pdfFile);
     }
-    
-    private void generatePDF(){
-        
+
+    private void generatePDF() {
+
     }
 
     /*private void reporte(String[] header, String[] cu, Mensaje msj) throws IOException {

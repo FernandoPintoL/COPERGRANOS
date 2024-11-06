@@ -67,7 +67,7 @@ public class Help {
     public static final String[] inventarioHeader = {"PRODUCTO ID", "ALAMACEN ID", "STOCK", "FECHA"};
     public static final String[] medidaHeader = {"ID", "DETALLE"};
     public static final String[] metodopagoHeader = {"ID", "NOMBRE"};
-    public static final String[] pagoHeader = {"ID", "MONTO", "MONEDA", "FECHA PAGO", "ESTADO PAGO", "COMPRO ID", "METODO PAGO ID", "TRANSACCION BANCARIA ID"};
+    public static final String[] pagoHeader = {"ID", "MONTO", "MONEDA", "FECHA PAGO", "ESTADO PAGO", "COMPRO ID", "METODO PAGO"};
     public static final String[] personaHeader = {"ID", "NOMBRE", "APELLIDO", "DIRECCION", "TELEFONO", "CORREO", "CI"};
     public static final String[] precioHeader = {"ID", "PRECIO", "DETALLE MEDIDA"};
     public static final String[] productoHeader = {"ID", "NOMBRE", "CODIGO", "DESCRIPCION", "PRECIO", "CATEGORIA ID", "MEDIDA ID"};
@@ -105,6 +105,7 @@ public class Help {
                 + "<table style=\" border-collapse: collapse; width: 100%; border: 1px solid black;\"> \r\n\r\n";
         response += trStart;
         for (String head : header) {
+            System.out.println("HEADER : "+head);
             response += thHeader(head);
         }
         response += trEnd;
@@ -112,6 +113,7 @@ public class Help {
         for (String[] cadenas : listaObject) {
             response += trStart;
             for (String cad : cadenas) {
+                System.out.println("OBJETOS : "+cad);
                 response += td(cad);
             }
             response += trEnd;
