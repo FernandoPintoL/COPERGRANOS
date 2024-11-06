@@ -75,7 +75,7 @@ public class Help {
     public static final String[] seguimientoHeader = {"ID", "FECHA EVENTO", "DESCRIPCION", "UBICACION ACTUAL", "ESTADO ACTUAL", "ENVIO ID"};
     public static final String[] transaccionbancariaHeader = {"ID", "NUMERO DE TRANSACCION", "BANCO ORIGEN", "BANCO DESTINO", "FECHA TRANSACCION"};
     public static final String[] productoAlmacenHeader = {"ID PRODUCTO", "ID ALMACEN", "COD ALMACEN", "PRODUCTO NOMBRE", "STOCK"};
-    public static final String[] productoVendidoHeader = {"ID PRODUCTO", "NOMBRE", "TOTAL VENDIDO"};
+    public static final String[] productoVendidoHeader = {"ID PRODUCTO", "NOMBRE", "PRECIO UNITARIO", "CANTIDAD VENDIDA", "TOTAL VENDIDO"};
 
     public static String ContenidoHelp() {
         return table();
