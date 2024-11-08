@@ -328,6 +328,11 @@ public class Help {
         seguimiento.addCaso(new Option("ELIMINAR SEGUIMIENTO", SEGUIMIENTO + "_DEL[id_seguimiento];"));
         seguimiento.addCaso(new Option("VER SEGUIMIENTO", SEGUIMIENTO + "_VER[id_seguimiento];"));
         seguimiento.addCaso(new Option("LISTAR SEGUIMIENTO", SEGUIMIENTO + "_LIS[];"));
+        
+        //REPORTES
+        CasosUso reporte = new CasosUso("CU16. GESTIONAR REPORTES ");
+        reporte.addCaso(new Option("CONTROL DE STOCK", STOCK + "_REP[];"));
+        reporte.addCaso(new Option("CANTIDAD Y MONTO DE PRODUCTOS VENDIDODOS", PRODUCTO_VENDIDO + "_REP[];"));
 
         //TRANSACCIONBANCARIA
         /*CasosUso transaccionbancaria = new CasosUso("CU17. GESTIONAR TRANSACCION BANCARIA ");
@@ -353,6 +358,7 @@ public class Help {
         casos.add(producto);        
         casos.add(proveedor);
         casos.add(seguimiento);
+        casos.add(reporte);
         //casos.add(transaccionbancaria);
         return casos;
     }
