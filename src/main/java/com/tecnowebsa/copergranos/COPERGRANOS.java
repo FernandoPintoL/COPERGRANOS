@@ -4,7 +4,7 @@
 
 package com.tecnowebsa.copergranos;
 
-import Consultas.Consulta;
+import CONSULTAS.Consulta;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
