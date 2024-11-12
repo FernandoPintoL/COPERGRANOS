@@ -99,12 +99,13 @@ public class DProducto {
     
     private final String TABLE = "producto";
     private final String QUERY_ID = "id_producto";
+    private final String CODIGO = "codigo";
     private final String QUERY_INSERT = String.format(
             "INSERT INTO %s (nombre, codigo, descripcion, precio, categoria_id, medida_id) VALUES (?,?,?,?,?,?)", TABLE);
     private final String QUERY_UPDATE = String.format(
             "UPDATE %s SET nombre=?, codigo=?, descripcion=?, precio=? WHERE %s=?", TABLE, QUERY_ID);
     private final String QUERY_ELIMINAR = String.format("DELETE FROM %s WHERE %s=?", TABLE, QUERY_ID);
-    private final String QUERY_VER = String.format("SELECT * FROM %s WHERE %s=?", TABLE, QUERY_ID);
+    private final String QUERY_VER = String.format("SELECT * FROM %s WHERE %s=? OR  %s=?", TABLE, QUERY_ID, CODIGO);
     private final String QUERY_LIST = "SELECT * FROM " + TABLE;
     private final String MESSAGE_TRYCATCH = "ERROR MODELO: " + TABLE.toUpperCase() + " ";
     private SQLConnection connection;
@@ -155,6 +156,11 @@ public class DProducto {
         boolean isSuccess = false;
         String mensaje = "";
         try {
+            String[] exists = ver();
+            if(exists == null){
+                System.out.println(MESSAGE_TRYCATCH+" NO EXISTE");
+                return new Object[]{false, "IDS INGRESADOS NO SE ENCUENTRAN REGISTRADADAS EN LA TABLA: "+TABLE.toUpperCase()};
+            }
             init_conexion();
             ps = connection.connect().prepareStatement(QUERY_INSERT);
             preparerState();
@@ -308,10 +314,12 @@ public class DProducto {
             init_conexion();
             ps = connection.connect().prepareStatement(QUERY_VER);
             ps.setInt(1, getId());
-            //ps.setInt(2,getCi());
+            ps.setInt(2, getId());
             set = ps.executeQuery();
             if (set.next()) {
+                System.out.println("SET: " + set);
                 data = arrayData(set);
+                System.out.println("DATA: " + Arrays.toString(data));
             }
         } catch (SQLException e) {
             // Muestra detalles de la excepción SQL
