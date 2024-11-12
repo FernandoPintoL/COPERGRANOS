@@ -18,6 +18,7 @@ public class Help {
     public static final String VER = "VER";
     public static final String CAN = "CAN";
     public static final String REP = "REP";
+    public static final String END = "END";
 
     // List de todas las tablas
     public static final String ADMINISTRATIVO = "ADM";
@@ -57,12 +58,14 @@ public class Help {
     public static final int LENPARAM9 = 9;
     public static final int LENPARAM10 = 10;
 
-    public static final String[] administrativoHeader = {"ID", "NOMBRE", "APELLIDO", "DIRECCION","TELEFONO","CORREO","CI","CARGO","FECHA INGRESO"};
+    public static final String[] administrativoHeader = {"ID","CARGO","NOMBRE","DIRECCION","TELEFONO","CORREO","CI","FECHA INGRESO"};
     public static final String[] almacenHeader = {"ID", "CODIGO", "DIRECCION"};
     public static final String[] categoriaHeader = {"ID", "NOMBRE", "DESCRIPCION"};
-    public static final String[] clienteHeader = {"ID", "NOMBRE", "APELLIDO", "DIRECCION","TELEFONO","CORREO","CI", "TIPO CLIENTE"};
+    public static final String[] clienteHeader = {"ID", "NOMBRE", "DIRECCION","TELEFONO","CORREO","CI", "TIPO CLIENTE"};
     public static final String[] compraHeader = {"ID", "PRECIO TOTAL", "FECHA COMPRA", "ESTADO", "CLIENTE ID", "ADMINISTRATIVO ID"};
+    public static final String[] compraToReportHeader = {"ID", "PRECIO TOTAL", "FECHA COMPRA", "ESTADO", "CLIENTE", "ADMINISTRATIVO"};
     public static final String[] detallecompraHeader = {"ID", "CANTIDAD", "PRECIO UNITARIO", "SUB TOTAL", "COMPRA ID", "PRODUCTO ID"};
+    public static final String[] detallecompraToReportHeader = {"ID", "PRODUCTO","CANTIDAD", "PRECIO UNITARIO", "SUB TOTAL"};
     public static final String[] envioHeader = {"ID", "FECHA ENVIO", "DIRECCION ENVIO", "CIUDAD ENVIO", "PAIS DESTINO", "ESTADO ENVIO", "FECHA ENTREGA", "METODO ENVIO", "TRANSPORTE", "COMPRA ID"};
     public static final String[] inventarioHeader = {"PRODUCTO ID", "ALAMACEN ID", "STOCK", "FECHA"};
     public static final String[] medidaHeader = {"ID", "DETALLE"};
@@ -70,8 +73,8 @@ public class Help {
     public static final String[] pagoHeader = {"ID", "MONTO", "MONEDA", "FECHA PAGO", "ESTADO PAGO", "COMPRO ID", "METODO PAGO"};
     public static final String[] personaHeader = {"ID", "NOMBRE", "APELLIDO", "DIRECCION", "TELEFONO", "CORREO", "CI"};
     //public static final String[] precioHeader = {"ID", "PRECIO", "DETALLE MEDIDA"};
-    public static final String[] productoHeader = {"ID", "NOMBRE", "CODIGO", "DESCRIPCION", "PRECIO", "CATEGORIA ID", "MEDIDA ID"};
-    public static final String[] proveedorHeader = {"ID", "NOMBRE", "APELLIDO", "DIRECCION", "TELEFONO", "CORREO", "CI", "TIPO PROVEEDOR", "DESCRIPCION"};
+    public static final String[] productoHeader = {"ID","CODIGO", "NOMBRE", "DESCRIPCION", "PRECIO", "CATEGORIA ID", "MEDIDA ID"};
+    public static final String[] proveedorHeader = {"ID", "NOMBRE", "DIRECCION", "TELEFONO", "CORREO", "CI", "TIPO PROVEEDOR", "DESCRIPCION"};
     public static final String[] seguimientoHeader = {"ID", "FECHA EVENTO", "DESCRIPCION", "UBICACION ACTUAL", "ESTADO ACTUAL", "ENVIO ID"};
     //public static final String[] transaccionbancariaHeader = {"ID", "NUMERO DE TRANSACCION", "BANCO ORIGEN", "BANCO DESTINO", "FECHA TRANSACCION"};
     public static final String[] productoAlmacenHeader = {"ID PRODUCTO", "ID ALMACEN", "COD ALMACEN", "PRODUCTO NOMBRE", "STOCK"};
@@ -125,7 +128,6 @@ public class Help {
 
     public static String listMensaje(String title, String[] header, List<String[]> listaObject) {
         String response = "Content-Type: text/html; charset=\"UTF-8\" \r\n\r\n"
-                + "<h1>" + title.toUpperCase() + " - HELP</h1>"
                 + "<table style=\" border-collapse: collapse; width: 100%; border: 1px solid black;\"> \r\n\r\n";
         response += trStart;
         for (String head : header) {
@@ -163,7 +165,7 @@ public class Help {
     }
 
     private static String thHeader(String title) {
-        return "<th style=\"text-align: center; padding: 8px; background-color: #e919a4; color: white; border: 1px solid black;\"> " + title + " </th> \r\n\r\n";
+        return "<th style=\"text-align: center; padding: 8px; background-color: green; color: white; border: 1px solid black;\"> " + title + " </th> \r\n\r\n";
     }
 
     private static String headerTable(String title) {
@@ -289,7 +291,8 @@ public class Help {
 
         //COMPRA #7
         CasosUso compra = new CasosUso("CU7. GESTIONAR COMPRA ");
-        compra.addCaso(new Option("GUARDAR COMPRA", COMPRA + "_ADD[preciototal,estado,cliente_id,administrativo_id];"));
+        compra.addCaso(new Option("GUARDAR COMPRA", COMPRA + "_ADD[cliente_id,administrativo_id];"));
+        compra.addCaso(new Option("FINALIZAR COMPRA", COMPRA + "_END[compra_id];"));
         compra.addCaso(new Option("MODIFICAR COMPRA", COMPRA + "_MOD[id_compra,preciototal,fechacompra,estado];"));
         compra.addCaso(new Option("ELIMINAR COMPRA", COMPRA + "_DEL[id_compra];"));
         compra.addCaso(new Option("LISTAR COMPRA", COMPRA + "_LIS[];"));
@@ -297,7 +300,7 @@ public class Help {
 
         //DETALLECOMPRA #7
         CasosUso detallecompra = new CasosUso("CU7. GESTIONAR DETALLE COMPRA ");
-        detallecompra.addCaso(new Option("GUARDAR DETALLE COMPRA", DETALLECOMPRA + "_ADD[cantidad,precio_unitario,subtotal,compra_id,producto_id];"));
+        detallecompra.addCaso(new Option("GUARDAR DETALLE COMPRA", DETALLECOMPRA + "_ADD[compra_id, producto_id, cantidad];"));
         detallecompra.addCaso(new Option("MODIFICAR DETALLE COMPRA", DETALLECOMPRA + "_MOD[id_detallecompra,cantidad,precio_unitario,subtotal];"));
         detallecompra.addCaso(new Option("ELIMINAR DETALLE COMPRA", DETALLECOMPRA + "_DEL[id_detallecompra];"));
         detallecompra.addCaso(new Option("VER DETALLE COMPRA", DETALLECOMPRA + "_VER[id_detallecompra];"));
