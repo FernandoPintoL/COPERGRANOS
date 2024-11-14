@@ -150,13 +150,12 @@ public class DProveedor {
     
     private String[] arrayData(ResultSet set) throws SQLException{
         return new String[]{
-            String.valueOf(set.getInt("id_persona")),
             String.valueOf(set.getInt("id_proveedor")),
-            String.valueOf(set.getInt("ci")),
             String.valueOf(set.getString("nombre")),
             String.valueOf(set.getString("direccion")),
             String.valueOf(set.getInt("telefono")),
             String.valueOf(set.getString("correo")),
+            String.valueOf(set.getInt("ci")),
             String.valueOf(set.getString("tipo_proveedor")),
             String.valueOf(set.getString("descripcion"))
         };

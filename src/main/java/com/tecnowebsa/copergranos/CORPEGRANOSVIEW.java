@@ -11,6 +11,7 @@ import CONSULTAS.Consulta;
 import java.io.PrintStream;
 
 public class CORPEGRANOSVIEW extends JFrame {
+
     private JTextArea textArea;
     private JButton startButton;
     private JButton stopButton;
@@ -73,6 +74,7 @@ public class CORPEGRANOSVIEW extends JFrame {
     }
 
     private void startListening() {
+        System.out.println("INICIANDO ESCUCHAS....");
         if (listenThread == null || !listening) {
             listening = true;
             listenThread = new Thread(new Runnable() {
@@ -89,11 +91,22 @@ public class CORPEGRANOSVIEW extends JFrame {
                             } else {
                                 textArea.append("...\n");
                             }
-                            Thread.sleep(5000);
+                            // Sleep for 4 seconds
+
+                            try {
+                                Thread.sleep(4000);
+                            } catch (InterruptedException e) {
+                                // If interrupted, exit the loop
+                                Thread.currentThread().interrupt(); // Restore the interrupt status
+                                break; // Exit the loop
+                            }
                         }
-                    } catch (IOException | InterruptedException ex) {
+                    } catch (IOException ex) {
+                        //Thread.currentThread().interrupt();
                         textArea.append(ex.toString() + "\n");
                         Logger.getLogger(Consulta.class.getName()).log(Level.SEVERE, null, ex);
+                    } finally {
+                        listening = false;
                     }
                 }
             });
@@ -102,6 +115,7 @@ public class CORPEGRANOSVIEW extends JFrame {
     }
 
     private void stopListening() {
+        System.out.println("DETENIENDO ESCUCHAS....");
         listening = false;
         if (listenThread != null) {
             listenThread.interrupt();

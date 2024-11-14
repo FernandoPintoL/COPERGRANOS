@@ -1,6 +1,8 @@
 package NEGOCIO;
 
 import DATA.DCompra;
+import DATA.DDetalleCompra;
+
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -30,6 +32,13 @@ public class NCompra {
         return response;
     }
 
+    public Object[] finalizarCompra(int id_compra, Double preciototal) throws SQLException, ParseException {
+        DATA_COMPRA = new DCompra(id_compra);
+        Object[] response = DATA_COMPRA.finalizarCompra(preciototal);
+        DATA_COMPRA.desconectar();
+        return response;
+    }
+
     public boolean eliminar(int id_compra) throws SQLException {
         DATA_COMPRA = new DCompra(id_compra);
         boolean response = DATA_COMPRA.eliminar();
@@ -42,6 +51,13 @@ public class NCompra {
         ArrayList<String[]> categoria = (ArrayList<String[]>) DATA_COMPRA.listar();
         DATA_COMPRA.desconectar();
         return categoria;
+    }
+
+    public String[] verToCompra(int id_compra) throws SQLException {
+        DATA_COMPRA = new DCompra(id_compra);
+        String[] data = DATA_COMPRA.verToCompra();
+        DATA_COMPRA.desconectar();
+        return data;
     }
 
     public String[] ver(int id_compra) throws SQLException {

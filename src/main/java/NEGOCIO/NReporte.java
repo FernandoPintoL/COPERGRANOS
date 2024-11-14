@@ -49,4 +49,16 @@ public class NReporte {
         return listado;
     }
 
+    public void generarReporteCompra(String[] encabezado, List<String[]> listado, String name_pdfFilePath) throws SQLException {
+        DATA_REPORTE = new DReporte();
+        reporte = new ReportGenerator();
+        String[] top_table_detalle = {"ID DETALLE", "PRODUCTO", "CANTIDAD", "PRECIO UNITARIO", "SUB TOTAL"};
+        if (!listado.isEmpty()) {
+            listado.add(0, top_table_detalle);
+            reporte.generatePdfReportCompra(encabezado, (ArrayList<String[]>) listado, name_pdfFilePath);
+            listado.remove(0);
+        }
+        DATA_REPORTE.desconectar();
+    }
+
 }

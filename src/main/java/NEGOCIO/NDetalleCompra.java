@@ -28,6 +28,12 @@ public class NDetalleCompra {
         DATA_DETALLECOMPRA.desconectar();
         return response;
     }
+    public double totalCompra(int id_compra) throws SQLException, ParseException {
+        DATA_DETALLECOMPRA = new DDetalleCompra();
+        double total = DATA_DETALLECOMPRA.obtenerSumaSubtotal(id_compra);
+        DATA_DETALLECOMPRA.desconectar();
+        return total;
+    }
 
     public boolean eliminar(int id_detellacompra) throws SQLException {
         DATA_DETALLECOMPRA = new DDetalleCompra(id_detellacompra);
@@ -38,9 +44,16 @@ public class NDetalleCompra {
 
     public List<String[]> listar() throws SQLException {
         DATA_DETALLECOMPRA = new DDetalleCompra();
-        ArrayList<String[]> categoria = (ArrayList<String[]>) DATA_DETALLECOMPRA.listar();
+        ArrayList<String[]> lista = (ArrayList<String[]>) DATA_DETALLECOMPRA.listar();
         DATA_DETALLECOMPRA.desconectar();
-        return categoria;
+        return lista;
+    }
+
+    public List<String[]> listarToCompra(int id_compra) throws SQLException {
+        DATA_DETALLECOMPRA = new DDetalleCompra();
+        ArrayList<String[]> lista = (ArrayList<String[]>) DATA_DETALLECOMPRA.listToCompra(id_compra);
+        DATA_DETALLECOMPRA.desconectar();
+        return lista;
     }
 
     public String[] ver(int id_detellacompra) throws SQLException {

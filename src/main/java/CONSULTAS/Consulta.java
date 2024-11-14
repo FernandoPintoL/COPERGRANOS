@@ -23,10 +23,13 @@ import NEGOCIO.NSeguimiento;
 import NEGOCIO.NTransaccionBancaria;
 import CONNECTION.Pop3;
 import CONNECTION.Smtp;
+
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.List;
+
 import OBJECT.Mensaje;
 
 import java.sql.Date;
@@ -46,14 +49,14 @@ public class Consulta {
     private final NEnvio NEGOCIO_ENVIO;
     private final NInventario NEGOCIO_INVENTARIO;
     private final NMedida NEGOCIO_MEDIDA;
-    private final NMetodoPago NEGOCIO_METODOPAGO;
+    //private final NMetodoPago NEGOCIO_METODOPAGO;
     private final NPago NEGOCIO_PAGO;
-    private final NPersona NEGOCIO_PERSONA;
+    //private final NPersona NEGOCIO_PERSONA;
     //private final NPrecio NEGOCIO_PRECIO;
     private final NProducto NEGOCIO_PRODUCTO;
     private final NProveedor NEGOCIO_PROVEEDOR;
     private final NSeguimiento NEGOCIO_SEGUIMIENTO;
-    private final NTransaccionBancaria NEGOCIO_TRANSACCIONBANACARIA;
+    //private final NTransaccionBancaria NEGOCIO_TRANSACCIONBANACARIA;
     private final NReporte NEGOCIO_REPORTE;
     // private Smtp smtp;
     private Pop3 pop3;
@@ -69,14 +72,14 @@ public class Consulta {
         NEGOCIO_ENVIO = new NEnvio();
         NEGOCIO_INVENTARIO = new NInventario();
         NEGOCIO_MEDIDA = new NMedida();
-        NEGOCIO_METODOPAGO = new NMetodoPago();
+        //NEGOCIO_METODOPAGO = new NMetodoPago();
         NEGOCIO_PAGO = new NPago();
-        NEGOCIO_PERSONA = new NPersona();
+        //NEGOCIO_PERSONA = new NPersona();
         //NEGOCIO_PRECIO = new NPrecio();
         NEGOCIO_PRODUCTO = new NProducto();
         NEGOCIO_PROVEEDOR = new NProveedor();
         NEGOCIO_SEGUIMIENTO = new NSeguimiento();
-        NEGOCIO_TRANSACCIONBANACARIA = new NTransaccionBancaria();
+        //NEGOCIO_TRANSACCIONBANACARIA = new NTransaccionBancaria();
         NEGOCIO_REPORTE = new NReporte();
     }
 
@@ -447,25 +450,95 @@ public class Consulta {
                 }
             }
             case Help.CLIENTE + "_" + Help.LIS: {
-                List<String[]> lista = NEGOCIO_PERSONA.listar();
+                List<String[]> lista = NEGOCIO_CLIENTE.listar();
                 list(Help.clienteHeader, lista, msj);
                 break;
             }
             //END CLIENTE
             //START COMPRA
             case Help.COMPRA + "_" + Help.ADD: {
-                if (msj.getParametros().size() == Help.LENPARAM4) {
-                    Double preciototal = Double.valueOf(msj.getParametros().get(0).trim());
-                    String estado = msj.getParametros().get(1);
-                    int cliente_id = Integer.parseInt(msj.getParametros().get(2).trim());
-                    int administrativo_id = Integer.parseInt(msj.getParametros().get(3).trim());
+                if (msj.getParametros().size() == Help.LENPARAM2) {
+                    Double preciototal = 0.0;//Double.valueOf(msj.getParametros().get(0).trim());
+                    String estado = "REGISTRADA";//msj.getParametros().get(1);
+                    int cliente_id = Integer.parseInt(msj.getParametros().get(0).trim());
+                    int administrativo_id = Integer.parseInt(msj.getParametros().get(1).trim());
+                    String[] exist_cliente = NEGOCIO_CLIENTE.ver(cliente_id);
+                    if (exist_cliente == null) {
+                        List<String[]> lista = NEGOCIO_CLIENTE.listar();
+                        String body = Help.listMensaje(msj.tableAction(), Help.clienteHeader, lista);
+                        body += "<h3>NO SE ENCONTRO NINGUN CLIENTE CON ESTE ID: " + cliente_id + "</h3>";
+                        body += "<h3>LISTA DE CLIENTES DE LA QUE PUEDE USAR CUALQUIER ID CORRECTO</h3>";
+                        sendMail(msj.getEmisor(), msj.evento(), body);
+                        break;
+                    }
+                    String[] exist_administrativo = NEGOCIO_ADMINISTRATIVO.ver(administrativo_id);
+                    if (exist_administrativo == null) {
+                        List<String[]> lista = NEGOCIO_ADMINISTRATIVO.listar();
+                        String body = Help.listMensaje(msj.tableAction(), Help.administrativoHeader, lista);
+                        body += "<h3>NO SE ENCONTRO NINGUN ADMINISTRATIVO CON ESTE ID: " + administrativo_id + "</h3>";
+                        body += "<h3>LISTA DE ADMINISTRATIVOS DE LA QUE PUEDE USAR CUALQUIER ID CORRECTO</h3>";
+                        sendMail(msj.getEmisor(), msj.evento(), body);
+                        break;
+                    }
                     Object[] responsse = NEGOCIO_COMPRA.guardar(preciototal, estado, cliente_id, administrativo_id);
                     boolean isSucces = (boolean) responsse[0];
                     String message = (String) responsse[1];
-                    if(isSucces){
-
+                    String recomendaciones = "";
+                    if (isSucces) {
+                        int id = (int) responsse[2];
+                        recomendaciones = "Content-Type: text/html; charset=\"UTF-8\" \r\n\r\n"
+                                + "<h3> ENVIA UN NUEVO CORREO CON LOS DETALLES DE LA COMPRA </h3>";
+                        recomendaciones += "<p>" + message.toUpperCase() + "</p>";
+                        recomendaciones += "<p>ENVIA UN NUEVO CORREO PARA REGISTRAR EL DETALLE DE LA COMPRA DE LA SIGUIENTE MANERA: </p>";
+                        recomendaciones += "<h3>DCMP_ADD[COMPRA_ID, PRODUCTO_ID, CANTIDAD]</h3>";
+                        recomendaciones += "<h3>COMPRA_ID: " + id + "</h3>";
+                    } else {
+                        recomendaciones = message;
                     }
-                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
+                    sendMail(msj.getEmisor(), msj.evento(), recomendaciones);
+                    break;
+                } else {
+                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
+                    break;
+                }
+            }
+            case Help.COMPRA + "_" + Help.END: {
+                if (msj.getParametros().size() == Help.LENPARAM1) {
+                    int id_compra = Integer.parseInt(msj.getParametros().get(0).trim());
+                    String[] exist_compra = NEGOCIO_COMPRA.ver(id_compra);
+                    if (exist_compra == null) {
+                        sendMail(msj.getEmisor(), msj.evento(), "NO EXISTE COMPRA CON ESTE ID: " + id_compra);
+                        break;
+                    }
+                    // PONER EL TOTAL DE LA COMPRA
+                    Double total = NEGOCIO_DETALLECOMPRA.totalCompra(id_compra);
+                    Object[] response = NEGOCIO_COMPRA.finalizarCompra(id_compra, total);
+                    boolean isSucces = (boolean) response[0];
+                    String message = (String) response[1];
+                    if(!isSucces){
+                        sendMail(msj.getEmisor(), msj.evento(), "ERROR AL FINALIZAR LA COMPRA "+message.toUpperCase());
+                        break;
+                    }
+                    //CREAR EL REPORTE Y PDF
+                    String name_pdf = Help.PATH + "COMPRA_FINALIZADA_" + horaFormateada + ".pdf";
+                    String[] cabecera = NEGOCIO_COMPRA.verToCompra(id_compra);
+                    List<String[]> lista = NEGOCIO_DETALLECOMPRA.listarToCompra(id_compra);
+                    NEGOCIO_REPORTE.generarReporteCompra(cabecera, lista, name_pdf);
+                    String id_cmp = cabecera[0];
+                    String preciototal_cmp = cabecera[1];
+                    String fecha_cmp = cabecera[2];
+                    String estado_cmp = cabecera[3]; 
+                    String cliente_cmp = cabecera[4]; 
+                    String admin_cmp = cabecera[5];
+                    String header_compra = "<h3> ID COMPRA: #"+id_cmp+"</h3>";
+                    header_compra += "<h3> Fecha: "+fecha_cmp+"</h3>";
+                    header_compra += "<h3> Precio Total: "+preciototal_cmp+"</h3>";
+                    header_compra += "<h3> Cliente: "+cliente_cmp+"</h3>";
+                    header_compra += "<h3> Administrativo: "+admin_cmp+"</h3>";
+                    header_compra += "<h3> Estado: "+estado_cmp+"</h3>";                    
+                    String body = Help.listMensaje(msj.tableAction(), Help.detallecompraToReportHeader, lista);
+                    header_compra += body;
+                    sendMailPdf(msj.getEmisor(), msj.evento(), header_compra, name_pdf);
                 } else {
                     sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
                 }
@@ -509,9 +582,28 @@ public class Consulta {
                     String[] data = NEGOCIO_COMPRA.ver(id);
                     if (data == null) {
                         sendMail(msj.getEmisor(), msj.evento(), "NO SE ENCONTRO NINGUNA COMPRA CON ESTE ID: " + id);
-                    } else {
-                        ver(Help.compraHeader, data, msj);
+                        break;
                     }
+                    //CREAR EL REPORTE Y PDF
+                    String name_pdf = Help.PATH + "COMPRA_" + horaFormateada + ".pdf";
+                    String[] cabecera = NEGOCIO_COMPRA.verToCompra(id);
+                    List<String[]> lista = NEGOCIO_DETALLECOMPRA.listarToCompra(id);
+                    NEGOCIO_REPORTE.generarReporteCompra(cabecera, lista, name_pdf);
+                    String id_cmp = cabecera[0];
+                    String preciototal_cmp = cabecera[1];
+                    String fecha_cmp = cabecera[2];
+                    String estado_cmp = cabecera[3]; 
+                    String cliente_cmp = cabecera[4]; 
+                    String admin_cmp = cabecera[5];
+                    String header_compra = "<h3> ID COMPRA: #"+id_cmp+"</h3>";
+                    header_compra += "<h3> Fecha: "+fecha_cmp+"</h3>";
+                    header_compra += "<h3> Precio Total: "+preciototal_cmp+"</h3>";
+                    header_compra += "<h3> Cliente: "+cliente_cmp+"</h3>";
+                    header_compra += "<h3> Administrativo: "+admin_cmp+"</h3>";
+                    header_compra += "<h3> Estado: "+estado_cmp+"</h3>";                    
+                    String body = Help.listMensaje(msj.tableAction(), Help.detallecompraToReportHeader, lista);
+                    header_compra += body;
+                    sendMailPdf(msj.getEmisor(), msj.evento(), header_compra, name_pdf);
                 } else {
                     sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
                 }
@@ -525,15 +617,54 @@ public class Consulta {
             //END COMPRA
             //START DETALLECOMPRA
             case Help.DETALLECOMPRA + "_" + Help.ADD: {
-                if (msj.getParametros().size() == Help.LENPARAM5) {
-                    Double cantidad = Double.valueOf(msj.getParametros().get(0).trim());
-                    Double prescio_unitario = Double.valueOf(msj.getParametros().get(1).trim());
-                    Double subtotal = Double.valueOf(msj.getParametros().get(2).trim());
-                    int compra_id = Integer.parseInt(msj.getParametros().get(3).trim());
-                    int producto_id = Integer.parseInt(msj.getParametros().get(4).trim());
-                    Object[] responsse = NEGOCIO_DETALLECOMPRA.guardar(cantidad, prescio_unitario, subtotal, compra_id, producto_id);
+                if (msj.getParametros().size() == Help.LENPARAM3) {
+                    int compra_id = Integer.parseInt(msj.getParametros().get(0).trim());
+                    int producto_id = Integer.parseInt(msj.getParametros().get(1).trim());
+                    Double cantidad = Double.valueOf(msj.getParametros().get(2).trim());
+                    Double precio_unitario = 0.0;//Double.valueOf(msj.getParametros().get(1).trim());
+                    Double subtotal = 0.0;//Double.valueOf(msj.getParametros().get(2).trim());
+                    String[] exist_compra = NEGOCIO_COMPRA.ver(compra_id);
+                    if (cantidad <= 0) {
+                        sendMail(msj.getEmisor(), msj.evento(), "La cantidad debe ser mayor a 0".toUpperCase());
+                        break;
+                    }
+                    if (exist_compra == null) {
+                        sendMail(msj.getEmisor(), msj.evento(), "NO EXISTE COMPRA CON ESTE ID: " + compra_id);
+                        break;
+                    }
+                    String[] exist_producto = NEGOCIO_PRODUCTO.ver(producto_id);
+                    if (exist_producto == null) {
+                        List<String[]> lista = NEGOCIO_PRODUCTO.listar();
+                        String body = Help.listMensaje(msj.tableAction(), Help.productoHeader, lista);
+                        body += "<h3>NO SE ENCONTRO NINGUN PRODUCTO CON ESTE ID: " + producto_id + "</h3>";
+                        body += "<h3>LISTA DE PRODUCTOS DE LA QUE PUEDE USAR CUALQUIER ID CORRECTO</h3>";
+                        body += "<h3>DCMP_ADD[" + compra_id + ", PRODUCTO_ID, CANTIDAD]</h3>";
+                        sendMail(msj.getEmisor(), msj.evento(), body);
+                        break;
+                    } else {
+                        System.out.println("Obteniendo el producto");
+                        System.out.println(exist_producto[4]);
+                        producto_id = Integer.parseInt(exist_producto[0].trim());
+                        precio_unitario = Double.parseDouble(exist_producto[4]);
+                        subtotal = precio_unitario * cantidad;
+                    }
+                    Object[] responsse = NEGOCIO_DETALLECOMPRA.guardar(cantidad, precio_unitario, subtotal, compra_id, producto_id);
                     String message = (String) responsse[1];
-                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
+                    boolean isSuccess = (boolean) responsse[0];
+                    if (isSuccess) {
+                        String recomendaciones = "Content-Type: text/html; charset=\"UTF-8\" \r\n\r\n"
+                                + "<h3>" + message + " EN DETALLE DE COMPRA</h3>"
+                                + "<p> PARA REGISTRAR UN NUEVO DETALLE DE COMPRA ENVIA UN NUEVO CORREO CON: DCMP_ADD[" + compra_id + ", PRODUCTO_ID, CANTIDAD]</p>";
+                        recomendaciones += "<h1>SI DESEAS FINALIZAR LA COMPRA, ENVIA UN NUEVO CORREO CON: "+Help.COMPRA+"_"+Help.END+"[" + compra_id + "]</h1>";
+                        recomendaciones += "<p>ID COMPRA: " + compra_id + "</p>";
+                        recomendaciones += "<h3>UTILIZA ESTA LISTA PARA VERIFICAR LOS PRODUCTOS DISPONIBLES</h3>";
+                        List<String[]> lista = NEGOCIO_PRODUCTO.listar();
+                        String body = Help.listMensaje(msj.tableAction(), Help.productoHeader, lista);
+                        recomendaciones += body;
+                        sendMail(msj.getEmisor(), msj.evento(), recomendaciones);
+                    } else {
+                        sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
+                    }
                 } else {
                     sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
                 }
@@ -543,9 +674,9 @@ public class Consulta {
                 if (msj.getParametros().size() == Help.LENPARAM4) {
                     int id = Integer.parseInt(msj.getParametros().get(0).trim());
                     Double cantidad = Double.valueOf(msj.getParametros().get(1).trim());
-                    Double prescio_unitario = Double.valueOf(msj.getParametros().get(2).trim());
+                    Double precio_unitario = Double.valueOf(msj.getParametros().get(2).trim());
                     Double subtotal = Double.valueOf(msj.getParametros().get(3).trim());
-                    Object[] responsse = NEGOCIO_DETALLECOMPRA.modificar(id, cantidad, prescio_unitario, subtotal);
+                    Object[] responsse = NEGOCIO_DETALLECOMPRA.modificar(id, cantidad, precio_unitario, subtotal);
                     String message = (String) responsse[1];
                     sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
                 } else {
@@ -809,61 +940,6 @@ public class Consulta {
                 break;
             }
             //MEDIDA END
-            //METODO PAGO 
-            case Help.METODOPAGO + "_" + Help.LIS: {
-                List<String[]> lista = NEGOCIO_METODOPAGO.listar();
-                list(Help.metodopagoHeader, lista, msj);
-                break;
-            }
-            case Help.METODOPAGO + "_" + Help.VER: {
-                if (msj.getParametros().size() == Help.LENPARAM1) {
-                    int id = Integer.parseInt(msj.getParametros().get(0).trim());
-                    String[] data = NEGOCIO_METODOPAGO.ver(id);
-                    if (data == null) {
-                        sendMail(msj.getEmisor(), msj.evento(), "NO SE ENCONTRO NINGUNA MEDIDA ID: " + id);
-                    } else {
-                        ver(Help.metodopagoHeader, data, msj);
-                    }
-                } else {
-                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
-                }
-                break;
-            }
-            case Help.METODOPAGO + "_" + Help.ADD: {
-                if (msj.getParametros().size() == Help.LENPARAM1) {
-                    String detalle = msj.getParametros().get(0);
-                    Object[] responsse = NEGOCIO_METODOPAGO.guardar(detalle);
-                    String message = (String) responsse[1];
-                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
-                } else {
-                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
-                }
-                break;
-            }
-            case Help.METODOPAGO + "_" + Help.MOD: {
-                if (msj.getParametros().size() == Help.LENPARAM2) {
-                    int id = Integer.parseInt(msj.getParametros().get(0).trim()); // Obtener el id
-                    String detalle = msj.getParametros().get(1);
-                    Object[] responsse = NEGOCIO_METODOPAGO.modificar(id, detalle);
-                    String message = (String) responsse[1];
-                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
-                } else {
-                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
-                }
-                break;
-            }
-            case Help.METODOPAGO + "_" + Help.DEL: {
-                if (msj.getParametros().size() == Help.LENPARAM1) {
-                    int id = Integer.parseInt(msj.getParametros().get(0).trim());
-                    boolean responsse = NEGOCIO_METODOPAGO.eliminar(id);
-                    String message = responsse ? " se elimino con exito".toUpperCase() : " (ERROR AL ELIMNAR).".toUpperCase();
-                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
-                } else {
-                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
-                }
-                break;
-            }
-            //METODO PAGO END
             //PAGO 
             case Help.PAGO + "_" + Help.LIS: {
                 List<String[]> lista = NEGOCIO_PAGO.listar();
@@ -939,128 +1015,6 @@ public class Consulta {
                 break;
             }
             //PAGO END
-            //START PERSONA 
-            case Help.PERSONA + "_" + Help.ADD: {
-                if (msj.getParametros().size() == Help.LENPARAM6) {
-                    String nombre = msj.getParametros().get(0);
-                    String apellido = msj.getParametros().get(1);
-                    String direccion = msj.getParametros().get(2);
-                    int telefono = Integer.parseInt(msj.getParametros().get(3).trim());
-                    String correo = msj.getParametros().get(4);
-                    int ci = Integer.parseInt(msj.getParametros().get(5).trim());
-                    Object[] responsse = NEGOCIO_PERSONA.guardar(nombre, apellido, direccion, telefono, correo, ci);
-                    String message = (String) responsse[1];
-                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
-                } else {
-                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
-                }
-                break;
-            }
-            case Help.PERSONA + "_" + Help.MOD: {
-                if (msj.getParametros().size() == Help.LENPARAM7) {
-                    int persona_id = Integer.parseInt(msj.getParametros().get(0).trim());
-                    String nombre = msj.getParametros().get(1);
-                    String apellido = msj.getParametros().get(2);
-                    String direccion = msj.getParametros().get(3);
-                    int telefono = Integer.parseInt(msj.getParametros().get(4).trim());
-                    String correo = msj.getParametros().get(5);
-                    int ci = Integer.parseInt(msj.getParametros().get(6).trim());
-                    Object[] responsse = NEGOCIO_PERSONA.modificar(persona_id, nombre, apellido, direccion, telefono, correo, ci);
-                    String message = (String) responsse[1];
-                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
-                } else {
-                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
-                }
-                break;
-            }
-            case Help.PERSONA + "_" + Help.DEL: {
-                if (msj.getParametros().size() == Help.LENPARAM1) {
-                    int persona_id = Integer.parseInt(msj.getParametros().get(0).trim());
-                    boolean responsse = NEGOCIO_PERSONA.eliminar(persona_id);
-                    String message = responsse ? " se elimino con exito".toUpperCase() : " (ERROR AL ELIMNAR).".toUpperCase();
-                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
-                } else {
-                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
-                }
-                break;
-            }
-            case Help.PERSONA + "_" + Help.VER: {
-                if (msj.getParametros().size() == Help.LENPARAM1) {
-                    int id = Integer.parseInt(msj.getParametros().get(0).trim());
-                    String[] data = NEGOCIO_PERSONA.ver(id);
-                    if (data == null) {
-                        sendMail(msj.getEmisor(), msj.evento(), "NO SE ENCONTRO NINGUNA PERSONA ID: " + id);
-                    } else {
-                        ver(Help.personaHeader, data, msj);
-                    }
-                } else {
-                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
-                }
-                break;
-            }
-            case Help.PERSONA + "_" + Help.LIS: {
-                List<String[]> lista = NEGOCIO_PERSONA.listar();
-                list(Help.personaHeader, lista, msj);
-                break;
-            }
-            //END PERSONA
-            /*/PRECIO
-            case Help.PRECIO + "_" + Help.LIS: {
-                List<String[]> lista = NEGOCIO_PRECIO.listar();
-                list(Help.precioHeader, lista, msj);
-                break;
-            }
-            case Help.PRECIO + "_" + Help.VER: {
-                if (msj.getParametros().size() == Help.LENPARAM1) {
-                    int id = Integer.parseInt(msj.getParametros().get(0).trim());
-                    String[] data = NEGOCIO_PRECIO.ver(id);
-                    if (data == null) {
-                        sendMail(msj.getEmisor(), msj.evento(), "NO SE ENCONTRO NINGUNA PERSONA ID: " + id);
-                    } else {
-                        ver(Help.precioHeader, data, msj);
-                    }
-                } else {
-                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
-                }
-                break;
-            }
-            case Help.PRECIO + "_" + Help.ADD: {
-                if (msj.getParametros().size() == Help.LENPARAM2) {
-                    double precios = Double.parseDouble(msj.getParametros().get(0).trim());
-                    String detalle = msj.getParametros().get(1);
-                    Object[] responsse = NEGOCIO_PRECIO.guardar(precios, detalle);
-                    String message = (String) responsse[1];
-                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
-                } else {
-                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
-                }
-                break;
-            }
-            case Help.PRECIO + "_" + Help.MOD: {
-                if (msj.getParametros().size() == Help.LENPARAM3) {
-                    int id = Integer.parseInt(msj.getParametros().get(0).trim());
-                    Double precios = Double.valueOf(msj.getParametros().get(1).trim());
-                    String detalle = msj.getParametros().get(2);
-                    Object[] responsse = NEGOCIO_PRECIO.modificar(id, precios, detalle);
-                    String message = (String) responsse[1];
-                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
-                } else {
-                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
-                }
-                break;
-            }
-            case Help.PRECIO + "_" + Help.DEL: {
-                if (msj.getParametros().size() == Help.LENPARAM1) {
-                    int id = Integer.parseInt(msj.getParametros().get(0).trim());
-                    boolean responsse = NEGOCIO_PRECIO.eliminar(id);
-                    String message = responsse ? " se elimino con exito".toUpperCase() : " (ERROR AL ELIMNAR).".toUpperCase();
-                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
-                } else {
-                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
-                }
-                break;
-            }
-            //PRECIO END*/
             //PRODUCTO             
             case Help.PRODUCTO + "_" + Help.LIS: {
                 System.out.println("INGRESAMOS AL METODO");
@@ -1271,67 +1225,6 @@ public class Consulta {
                 }
                 break;
             }
-            //SEGUIMIENTO END
-            /*/TRANSACCION BANCARIA
-            case Help.TRANSACCIONBANCARIA + "_" + Help.LIS: {
-                List<String[]> lista = NEGOCIO_TRANSACCIONBANACARIA.listar();
-                list(Help.transaccionbancariaHeader, lista, msj);
-                break;
-            }
-            case Help.TRANSACCIONBANCARIA + "_" + Help.VER: {
-                if (msj.getParametros().size() == Help.LENPARAM1) {
-                    int id = Integer.parseInt(msj.getParametros().get(0).trim());
-                    String[] data = NEGOCIO_TRANSACCIONBANACARIA.ver(id);
-                    if (data == null) {
-                        sendMail(msj.getEmisor(), msj.evento(), "NO SE ENCONTRO NINGUN SEGUIMIENTO ID: " + id);
-                    } else {
-                        ver(Help.transaccionbancariaHeader, data, msj);
-                    }
-                } else {
-                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
-                }
-                break;
-            }
-            case Help.TRANSACCIONBANCARIA + "_" + Help.ADD: {
-                if (msj.getParametros().size() == Help.LENPARAM3) {
-                    int num_transaccion = Integer.parseInt(msj.getParametros().get(0).trim());
-                    String banco_origen = msj.getParametros().get(1);
-                    String banco_destino = msj.getParametros().get(2);
-                    Object[] responsse = NEGOCIO_TRANSACCIONBANACARIA.guardar(num_transaccion, banco_origen, banco_destino);
-                    String message = (String) responsse[1];
-                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
-                } else {
-                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
-                }
-                break;
-            }
-            case Help.TRANSACCIONBANCARIA + "_" + Help.MOD: {
-                if (msj.getParametros().size() == Help.LENPARAM5) {
-                    int id = Integer.parseInt(msj.getParametros().get(0).trim());
-                    int num_transaccion = Integer.parseInt(msj.getParametros().get(1).trim());
-                    String banco_origen = msj.getParametros().get(2);
-                    String banco_destino = msj.getParametros().get(3);
-                    Date fecha_transaccion = Date.valueOf(msj.getParametros().get(4));
-                    Object[] responsse = NEGOCIO_TRANSACCIONBANACARIA.modificar(id, num_transaccion, banco_origen, banco_destino, fecha_transaccion);
-                    String message = (String) responsse[1];
-                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
-                } else {
-                    sendMail(msj.getEmisor(), "Parametros incorrectos", erorrLengthParametros(msj));
-                }
-                break;
-            }
-            case Help.TRANSACCIONBANCARIA + "_" + Help.DEL: {
-                if (msj.getParametros().size() == Help.LENPARAM1) {
-                    int id = Integer.parseInt(msj.getParametros().get(0).trim());
-                    boolean responsse = NEGOCIO_TRANSACCIONBANACARIA.eliminar(id);
-                    String message = responsse ? " se elimino con exito".toUpperCase() : " (ERROR AL ELIMNAR).".toUpperCase();
-                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
-                } else {
-                    sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
-                }
-                break;
-            }
-            //TRANSACCION BANCARIA END*/
             default:
                 sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, tablaOActionNotFount(msj));
                 break;

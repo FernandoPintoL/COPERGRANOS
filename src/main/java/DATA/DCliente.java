@@ -138,12 +138,12 @@ public class DCliente {
     private String[] arrayData(ResultSet set) throws SQLException {
         return new String[]{
             String.valueOf(set.getInt("id_cliente")),
-            String.valueOf(set.getString("tipo_cliente")),
-            String.valueOf(set.getInt("ci")),
             String.valueOf(set.getString("nombre")),
             String.valueOf(set.getString("direccion")),
             String.valueOf(set.getInt("telefono")),
-            String.valueOf(set.getString("correo"))
+            String.valueOf(set.getString("correo")),
+            String.valueOf(set.getInt("ci")),
+            String.valueOf(set.getString("tipo_cliente")),
         };
     }
 

@@ -7,6 +7,7 @@ package DATA;
 import UTILS.ConstGlobal;
 import UTILS.ConstPSQL;
 import CONNECTION.SQLConnection;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,7 +18,6 @@ import java.sql.Date;
 import java.time.LocalDate;
 
 /**
- *
  * @author fpl
  */
 public class DCompra {
@@ -35,7 +35,7 @@ public class DCompra {
     public void setId(int id) {
         this.id = id;
     }
-    
+
     public double getPreciototal() {
         return preciototal;
     }
@@ -104,21 +104,29 @@ public class DCompra {
         this.fechacompra = fechacompra;
         this.estado = estado;
     }
-        
+
     private final String TABLE = "compra";
     private final String QUERY_ID = "id_compra";
     private final String QUERY_INSERT = String.format(
             "INSERT INTO %s (preciototal, fechacompra, estado, cliente_id, administrativo_id) VALUES (?,?,?,?,?)", TABLE);
     private final String QUERY_UPDATE = String.format(
             "UPDATE %s SET preciototal=?, fechacompra=?, estado=? WHERE %s=?", TABLE, QUERY_ID);
+    private final String QUERY_FINALIZAR_COMPRA = String.format(
+            "UPDATE %s SET preciototal=?, estado=? WHERE %s=?", TABLE, QUERY_ID);
     private final String QUERY_ELIMINAR = String.format("DELETE FROM %s WHERE %s=?", TABLE, QUERY_ID);
     private final String QUERY_VER = String.format("SELECT * FROM %s WHERE %s=?", TABLE, QUERY_ID);
+    private final String QUERY_VER_TO_COMPRA = String.format(
+            "SELECT compra.*, cliente.nombre AS nombre_cliente, administrativo.nombre AS nombre_administrativo " +
+                    "FROM %s " +
+                    "JOIN cliente ON compra.cliente_id = cliente.id_cliente " +
+                    "JOIN administrativo ON compra.administrativo_id = administrativo.id_administrativo " +
+                    "WHERE %s=?", TABLE, QUERY_ID);
     private final String QUERY_LIST = "SELECT * FROM " + TABLE;
     private final String MESSAGE_TRYCATCH = "ERROR MODELO: " + TABLE.toUpperCase() + " ";
     private SQLConnection connection;
     private PreparedStatement ps;
     private ResultSet set;
-    
+
     private void init_conexion() {
         connection = new SQLConnection(
                 ConstPSQL.user,
@@ -127,22 +135,33 @@ public class DCompra {
                 ConstGlobal.PORT_DB,
                 ConstPSQL.dbName);
     }
-    
+
     private String[] arrayData(ResultSet set) throws SQLException {
         return new String[]{
-            String.valueOf(set.getInt("id_compra")),
-            String.valueOf(set.getDouble("preciototal")),
-            String.valueOf(set.getDate("fechacompra")),
-            String.valueOf(set.getString("estado")),            
-            String.valueOf(set.getInt("cliente_id")),
-            String.valueOf(set.getInt("administrativo_id"))
+                String.valueOf(set.getInt("id_compra")),
+                String.valueOf(set.getDouble("preciototal")),
+                String.valueOf(set.getDate("fechacompra")),
+                String.valueOf(set.getString("estado")),
+                String.valueOf(set.getInt("cliente_id")),
+                String.valueOf(set.getInt("administrativo_id"))
         };
     }
-    
+
+    private String[] arrayDataToCompra(ResultSet set) throws SQLException {
+        return new String[]{
+                String.valueOf(set.getInt("id_compra")),
+                String.valueOf(set.getDouble("preciototal")),
+                String.valueOf(set.getDate("fechacompra")),
+                String.valueOf(set.getString("estado")),
+                String.valueOf(set.getString("nombre_cliente")),
+                String.valueOf(set.getString("nombre_administrativo"))
+        };
+    }
+
     void preparerState() throws SQLException {
         try {
             // Intentar establecer los valores
-            ps.setDouble(1, getPreciototal());        
+            ps.setDouble(1, getPreciototal());
             ps.setDate(2, getFechacompra());
             ps.setString(3, getEstado());
             /*ps.setInt(4, cliente_id);
@@ -170,18 +189,16 @@ public class DCompra {
             int execute = ps.executeUpdate();
             isSuccess = execute > 0;
             if (isSuccess) {
-                ResultSet generatedKeys = ps.getGeneratedKeys();
-                if (generatedKeys.next()) {
-                    generatedId = generatedKeys.getInt(1); // Obtener el ID generado
-                }
-                mensaje = TABLE+" Registro insertado exitosamente.".toUpperCase();
+                generatedId = obtenerUltimoId();
+                System.out.println("ID GENERADO: " + generatedId);
+                mensaje = TABLE + " REGISTRO INSERATDO CORRECTAMENTE | ID: " + generatedId;
             } else {
-                mensaje = MESSAGE_TRYCATCH+" Error al intentar guardar los datos.".toUpperCase();
+                mensaje = MESSAGE_TRYCATCH + " Error al intentar guardar los datos.".toUpperCase();
                 //throw new SQLException("No se pudo insertar el registro en la base de datos.".toUpperCase());
             }
         } catch (SQLException e) {
             // Imprimir detalles del error SQLException
-            mensaje = MESSAGE_TRYCATCH+" (GUARDAR) Error en la base de datos: " + e.getMessage();
+            mensaje = MESSAGE_TRYCATCH + " (GUARDAR) Error en la base de datos: " + e.getMessage();
             System.out.println(MESSAGE_TRYCATCH + " GUARDAR");
             e.printStackTrace(); // Imprime toda la traza del error para depurar
             System.out.println("Mensaje: " + e.getMessage()); // Mensaje detallado del error
@@ -195,7 +212,7 @@ public class DCompra {
                 }
             } catch (SQLException e) {
                 System.out.println("Error al cerrar PreparedStatement: " + TABLE + e.getMessage());
-                mensaje = MESSAGE_TRYCATCH+" (GUARDAR) Error al cerrar PreparedStatement: " + TABLE + e.getMessage();
+                mensaje = MESSAGE_TRYCATCH + " (GUARDAR) Error al cerrar PreparedStatement: " + TABLE + e.getMessage();
             }
         }
         return new Object[]{isSuccess, mensaje, generatedId};
@@ -206,9 +223,9 @@ public class DCompra {
         String mensaje = "";
         try {
             String[] exists = ver();
-            if(exists == null){
-                System.out.println(MESSAGE_TRYCATCH+" NO EXISTE");
-                return new Object[]{false, "IDS INGRESADOS NO SE ENCUENTRAN REGISTRADADAS EN LA TABLA: "+TABLE.toUpperCase()};
+            if (exists == null) {
+                System.out.println(MESSAGE_TRYCATCH + " NO EXISTE");
+                return new Object[]{false, "IDS INGRESADOS NO SE ENCUENTRAN REGISTRADADAS EN LA TABLA: " + TABLE.toUpperCase()};
             }
             init_conexion();
             ps = connection.connect().prepareStatement(QUERY_UPDATE);
@@ -217,9 +234,9 @@ public class DCompra {
             int execute = ps.executeUpdate();
             isSuccess = execute > 0;
             if (isSuccess) {
-                mensaje = TABLE+" - (MODIFICAR) actualizacion exitosamente.".toUpperCase();
+                mensaje = TABLE + " - (MODIFICAR) actualizacion exitosamente.".toUpperCase();
             } else {
-                mensaje = MESSAGE_TRYCATCH+" - (MODIFICAR) Error al actualizar los datos.".toUpperCase();
+                mensaje = MESSAGE_TRYCATCH + " - (MODIFICAR) Error al actualizar los datos.".toUpperCase();
                 //throw new SQLException("No se pudo Error al actualizar los datos.".toUpperCase());
             }
         } catch (SQLException e) {
@@ -237,7 +254,51 @@ public class DCompra {
                 }
             } catch (SQLException e) {
                 System.out.println(" (MODIFICAR) Error al cerrar PreparedStatement: ".toUpperCase() + TABLE + e.getMessage());
-                mensaje = MESSAGE_TRYCATCH+" (MODIFICAR) Error al cerrar PreparedStatement: ".toUpperCase() + TABLE + e.getMessage();
+                mensaje = MESSAGE_TRYCATCH + " (MODIFICAR) Error al cerrar PreparedStatement: ".toUpperCase() + TABLE + e.getMessage();
+            }
+        }
+        return new Object[]{isSuccess, mensaje};
+    }
+
+    public Object[] finalizarCompra(Double preciototal) throws SQLException, ParseException {
+        boolean isSuccess = false;
+        String mensaje = "";
+        try {
+            String[] exists = ver();
+            if (exists == null) {
+                System.out.println(MESSAGE_TRYCATCH + " NO EXISTE");
+                return new Object[]{false, "IDS INGRESADOS NO SE ENCUENTRAN REGISTRADADAS EN LA TABLA: " + TABLE.toUpperCase()};
+            }
+            init_conexion();
+            ps = connection.connect().prepareStatement(QUERY_FINALIZAR_COMPRA);
+            preparerState();
+            ps.setDouble(1, preciototal);
+            ps.setString(2, "FINALIZADA");
+            ps.setInt(3, getId());
+            int execute = ps.executeUpdate();
+            isSuccess = execute > 0;
+            if (isSuccess) {
+                mensaje = TABLE + " - (MODIFICAR) actualizacion exitosamente.".toUpperCase();
+            } else {
+                mensaje = MESSAGE_TRYCATCH + " - (MODIFICAR) Error al actualizar los datos.".toUpperCase();
+                //throw new SQLException("No se pudo Error al actualizar los datos.".toUpperCase());
+            }
+        } catch (SQLException e) {
+            System.out.println(MESSAGE_TRYCATCH + " MODIFICAR");
+            mensaje = MESSAGE_TRYCATCH + " MODIFICAR";
+            e.printStackTrace(); // Imprime toda la traza del error para depurar
+            System.out.println("Mensaje: " + e.getMessage()); // Mensaje detallado del error
+            System.out.println("Estado SQL: " + e.getSQLState()); // Código de estado SQL
+            System.out.println("Código de error: " + e.getErrorCode()); // Código de error del proveedor de la BD
+        } finally {
+            // Cerrar el PreparedStatement
+            try {
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(" (MODIFICAR) Error al cerrar PreparedStatement: ".toUpperCase() + TABLE + e.getMessage());
+                mensaje = MESSAGE_TRYCATCH + " (MODIFICAR) Error al cerrar PreparedStatement: ".toUpperCase() + TABLE + e.getMessage();
             }
         }
         return new Object[]{isSuccess, mensaje};
@@ -247,7 +308,7 @@ public class DCompra {
         boolean eliminado = false;
         try {
             String[] exists = ver();
-            if(exists == null){
+            if (exists == null) {
                 System.out.println("EL ADMINSITRATIVO NO EXISTE");
                 return false;
             }
@@ -343,6 +404,54 @@ public class DCompra {
             }
         }
         return data;
+    }
+
+    public String[] verToCompra() {
+        String[] data = null;
+        try {
+            init_conexion();
+            ps = connection.connect().prepareStatement(QUERY_VER_TO_COMPRA);
+            ps.setInt(1, getId());
+            //ps.setInt(2,getCi());
+            set = ps.executeQuery();
+            if (set.next()) {
+                data = arrayDataToCompra(set);
+            }
+        } catch (SQLException e) {
+            // Muestra detalles de la excepción SQL
+            System.err.println("Error de SQL: " + e.getMessage());
+            System.err.println("Estado SQL: " + e.getSQLState());
+            System.err.println("Código de Error: " + e.getErrorCode());
+            e.printStackTrace(); // Imprime la pila de llamadas para más detalles
+        } finally {
+            try {
+                if (set != null) {
+                    set.close();
+                }
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException e) {
+                System.err.println("Error al cerrar recursos: " + e.getMessage());
+            }
+        }
+        return data;
+    }
+
+    public int obtenerUltimoId() throws SQLException {
+        int ultimoId = -1;
+        String query = "SELECT id_compra FROM compra ORDER BY id_compra DESC LIMIT 1";
+        try {
+            ps = connection.connect().prepareStatement(query);
+            set = ps.executeQuery();
+            if (set.next()) {
+                ultimoId = set.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener el último ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return ultimoId;
     }
 
     public void desconectar() {

@@ -7,6 +7,7 @@ package DATA;
 import UTILS.ConstGlobal;
 import UTILS.ConstPSQL;
 import CONNECTION.SQLConnection;
+
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,7 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author fpl
  */
 public class DDetalleCompra {
@@ -106,6 +106,13 @@ public class DDetalleCompra {
     private final String QUERY_ELIMINAR = String.format("DELETE FROM %s WHERE %s=?", TABLE, QUERY_ID);
     private final String QUERY_VER = String.format("SELECT * FROM %s WHERE %s=?", TABLE, QUERY_ID);
     private final String QUERY_LIST = "SELECT * FROM " + TABLE;
+    private final String QUERY_LIST_TO_COMPRA = "SELECT detallecompra.*, producto.nombre AS nombre_producto " +
+            "FROM " + TABLE + " " +
+            "JOIN producto ON detallecompra.producto_id = producto.id_producto" +
+            " WHERE detallecompra.compra_id = ?";
+    final String QUERY_SUM_SUBTOTAL = "SELECT SUM(subtotal) AS total_subtotal " +
+            "FROM detallecompra " +
+            "WHERE compra_id = ?";
     private final String MESSAGE_TRYCATCH = "ERROR MODELO: " + TABLE.toUpperCase() + " ";
     private SQLConnection connection;
     private PreparedStatement ps;
@@ -113,12 +120,22 @@ public class DDetalleCompra {
 
     private String[] arrayData(ResultSet set) throws SQLException {
         return new String[]{
-            String.valueOf(set.getInt("id_detallecompra")),
-            String.valueOf(set.getDouble("cantidad")),
-            String.valueOf(set.getDouble("precio_unitario")),
-            String.valueOf(set.getDouble("subtotal")),
-            String.valueOf(set.getInt("compra_id")),
-            String.valueOf(set.getInt("producto_id"))
+                String.valueOf(set.getInt("id_detallecompra")),
+                String.valueOf(set.getDouble("cantidad")),
+                String.valueOf(set.getDouble("precio_unitario")),
+                String.valueOf(set.getDouble("subtotal")),
+                String.valueOf(set.getInt("compra_id")),
+                String.valueOf(set.getInt("producto_id"))
+        };
+    }
+
+    private String[] arrayDataToCompra(ResultSet set) throws SQLException {
+        return new String[]{
+                String.valueOf(set.getInt("id_detallecompra")),
+                String.valueOf(set.getString("nombre_producto")),
+                String.valueOf(set.getDouble("cantidad")),
+                String.valueOf(set.getDouble("precio_unitario")),
+                String.valueOf(set.getDouble("subtotal"))
         };
     }
 
@@ -163,7 +180,7 @@ public class DDetalleCompra {
             int execute = ps.executeUpdate();
             isSuccess = execute > 0;
             if (isSuccess) {
-                mensaje = MESSAGE_TRYCATCH + " Registro insertado exitosamente.".toUpperCase();
+                mensaje = " Registro insertado exitosamente.".toUpperCase();
             } else {
                 mensaje = MESSAGE_TRYCATCH + " Error al intentar guardar los datos.".toUpperCase();
                 //throw new SQLException("No se pudo insertar el registro en la base de datos.".toUpperCase());
@@ -195,10 +212,10 @@ public class DDetalleCompra {
         String mensaje = "";
         try {
             String[] exists = ver();
-            if(exists == null){
-                System.out.println(MESSAGE_TRYCATCH+" NO EXISTE");
-                return new Object[]{false, "IDS INGRESADOS NO SE ENCUENTRAN REGISTRADADAS EN LA TABLA: "+TABLE.toUpperCase()};
-            }            
+            if (exists == null) {
+                System.out.println(MESSAGE_TRYCATCH + " NO EXISTE");
+                return new Object[]{false, "IDS INGRESADOS NO SE ENCUENTRAN REGISTRADADAS EN LA TABLA: " + TABLE.toUpperCase()};
+            }
             init_conexion();
             ps = connection.connect().prepareStatement(QUERY_UPDATE);
             preparerState();
@@ -206,7 +223,7 @@ public class DDetalleCompra {
             int execute = ps.executeUpdate();
             isSuccess = execute > 0;
             if (isSuccess) {
-                mensaje = TABLE+" - (MODIFICAR) actualizacion exitosamente.".toUpperCase();
+                mensaje = TABLE + " - (MODIFICAR) actualizacion exitosamente.".toUpperCase();
             } else {
                 mensaje = MESSAGE_TRYCATCH + " - (MODIFICAR) Error al actualizar los datos.".toUpperCase();
                 //throw new SQLException("No se pudo Error al actualizar los datos.".toUpperCase());
@@ -277,6 +294,64 @@ public class DDetalleCompra {
             set = ps.executeQuery();
             while (set.next()) {
                 datas.add(arrayData(set));
+            }
+        } catch (SQLException e) {
+            // Imprimir el error en consola con detalles
+            System.out.println(MESSAGE_TRYCATCH + " LISTAR");
+            e.printStackTrace(); // Esto imprime toda la traza del error, útil para depurar
+            System.out.println("Mensaje: " + e.getMessage()); // Mensaje del error SQL
+            System.out.println("Estado SQL: " + e.getSQLState()); // Estado SQL asociado al error
+            System.out.println("Código de error: " + e.getErrorCode()); // Código de error del proveedor
+        } finally {
+            // Cerrar recursos para evitar fugas de memoria
+            try {
+                if (set != null) {
+                    set.close();
+                }
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException e) {
+                System.out.println(e.toString() + TABLE);
+                e.printStackTrace(); // Imprimir cualquier error al cerrar recursos
+            }
+        }
+        return datas;
+    }
+
+    public double obtenerSumaSubtotal(int compra_id) throws SQLException {
+        double totalSubtotal = 0.0;
+        try {
+            init_conexion();
+            ps = connection.connect().prepareStatement(QUERY_SUM_SUBTOTAL);
+            ps.setInt(1, compra_id);
+            set = ps.executeQuery();
+            if (set.next()) {
+                totalSubtotal = set.getDouble("total_subtotal");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener la suma del subtotal: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            if (set != null) {
+                set.close();
+            }
+            if (ps != null) {
+                ps.close();
+            }
+        }
+        return totalSubtotal;
+    }
+
+    public List<String[]> listToCompra(int compra_id) throws SQLException {
+        List<String[]> datas = new ArrayList<>();
+        try {
+            init_conexion();
+            ps = connection.connect().prepareStatement(QUERY_LIST_TO_COMPRA);
+            ps.setInt(1, compra_id);
+            set = ps.executeQuery();
+            while (set.next()) {
+                datas.add(arrayDataToCompra(set));
             }
         } catch (SQLException e) {
             // Imprimir el error en consola con detalles

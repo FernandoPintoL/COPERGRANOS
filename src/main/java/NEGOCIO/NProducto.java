@@ -2,8 +2,10 @@ package NEGOCIO;
 
 import DATA.DProducto;
 import java.sql.SQLException;
+import java.sql.SQLOutput;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class NProducto {
@@ -43,6 +45,7 @@ public class NProducto {
     public String[] ver(int id) throws SQLException {
         DATA_PRODUCTO = new DProducto(id);
         String[] producto = DATA_PRODUCTO.ver();
+        System.out.println("Producto: " + Arrays.toString(producto));
         DATA_PRODUCTO.desconectar();
         return producto;
     }
