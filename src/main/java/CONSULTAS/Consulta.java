@@ -624,12 +624,14 @@ public class Consulta {
                     Double precio_unitario = 0.0;//Double.valueOf(msj.getParametros().get(1).trim());
                     Double subtotal = 0.0;//Double.valueOf(msj.getParametros().get(2).trim());
                     String[] exist_compra = NEGOCIO_COMPRA.ver(compra_id);
-                    if (cantidad <= 0) {
-                        sendMail(msj.getEmisor(), msj.evento(), "La cantidad debe ser mayor a 0".toUpperCase());
-                        break;
-                    }
                     if (exist_compra == null) {
                         sendMail(msj.getEmisor(), msj.evento(), "NO EXISTE COMPRA CON ESTE ID: " + compra_id);
+                        break;
+                    }else{
+                        
+                    }
+                    if (cantidad <= 0) {
+                        sendMail(msj.getEmisor(), msj.evento(), "La cantidad debe ser mayor a 0".toUpperCase());
                         break;
                     }
                     String[] exist_producto = NEGOCIO_PRODUCTO.ver(producto_id);
@@ -642,16 +644,31 @@ public class Consulta {
                         sendMail(msj.getEmisor(), msj.evento(), body);
                         break;
                     } else {
-                        System.out.println("Obteniendo el producto");
-                        System.out.println(exist_producto[4]);
+                        //VERIFICAR SI EL PRODUCTO YA EXISTE DENTRO DE LA COMPRA
+                        String[] responsse_existe_cp = NEGOCIO_DETALLECOMPRA.existe_compra_producto(compra_id, producto_id);
+                        if(responsse_existe_cp != null){
+                            String id_detallecompra = responsse_existe_cp[0];
+                            sendMail(msj.getEmisor(), msj.evento(), "EL DETALLE YA EXISTE SI DESEA MODIFICAR ENVIE UN NUEVO CORREO CON DCMP_MOD["+id_detallecompra+","+cantidad+"] | DCMP_ADD[ID_DETALLECOMPRA, CANTIDAD] | ID DETALLE_COMPRA: "+id_detallecompra.toUpperCase());
+                            break;
+                        }
                         producto_id = Integer.parseInt(exist_producto[0].trim());
                         precio_unitario = Double.parseDouble(exist_producto[4]);
                         subtotal = precio_unitario * cantidad;
+                        //HACER LOS CALCULOS PARA DISMINUIR EL STOCK
+                        Date date_actual = Date.valueOf(fecha_actual);
+                        Object[] responsse_inventario = NEGOCIO_INVENTARIO.modificar(producto_id, 1,cantidad, date_actual);
+                        boolean isSuccess_inventario = (boolean) responsse_inventario[0];
+                        if(!isSuccess_inventario){
+                            String message_inventario = (String) responsse_inventario[1];
+                            sendMail(msj.getEmisor(), msj.evento(), message_inventario.toUpperCase());
+                            break;
+                        }
                     }
                     Object[] responsse = NEGOCIO_DETALLECOMPRA.guardar(cantidad, precio_unitario, subtotal, compra_id, producto_id);
                     String message = (String) responsse[1];
                     boolean isSuccess = (boolean) responsse[0];
                     if (isSuccess) {
+                        //responsse_producto = NEGOCIO_INVENTARIO.modificar(producto_id, cantidad, "RESTA");
                         String recomendaciones = "Content-Type: text/html; charset=\"UTF-8\" \r\n\r\n"
                                 + "<h3>" + message + " EN DETALLE DE COMPRA</h3>"
                                 + "<p> PARA REGISTRAR UN NUEVO DETALLE DE COMPRA ENVIA UN NUEVO CORREO CON: DCMP_ADD[" + compra_id + ", PRODUCTO_ID, CANTIDAD]</p>";
@@ -671,11 +688,21 @@ public class Consulta {
                 break;
             }
             case Help.DETALLECOMPRA + "_" + Help.MOD: {
-                if (msj.getParametros().size() == Help.LENPARAM4) {
+                if (msj.getParametros().size() == Help.LENPARAM2) {
                     int id = Integer.parseInt(msj.getParametros().get(0).trim());
                     Double cantidad = Double.valueOf(msj.getParametros().get(1).trim());
-                    Double precio_unitario = Double.valueOf(msj.getParametros().get(2).trim());
-                    Double subtotal = Double.valueOf(msj.getParametros().get(3).trim());
+                    Double precio_unitario = 0.0;//Double.valueOf(msj.getParametros().get(2).trim());
+                    Double subtotal = 0.0;//Double.valueOf(msj.getParametros().get(3).trim());
+                    //ANTES DE MODIFICAR SERIA VERIFICAR QUE EXISTA EL PRODUCTO
+                    String[] detalle_compra = NEGOCIO_DETALLECOMPRA.ver(id);
+                    if(detalle_compra == null){
+                        sendMail(msj.getEmisor(), msj.evento(), "ESTE DETALLE DE COMPRA NO EXISTE".toUpperCase());
+                        break;
+                    }
+                    int producto_id = Integer.parseInt(detalle_compra[5].toString());
+                    String[] producto = NEGOCIO_PRODUCTO.ver(producto_id);
+                    precio_unitario = Double.parseDouble(producto[4]);
+                    subtotal = precio_unitario * cantidad;
                     Object[] responsse = NEGOCIO_DETALLECOMPRA.modificar(id, cantidad, precio_unitario, subtotal);
                     String message = (String) responsse[1];
                     sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
@@ -1037,17 +1064,26 @@ public class Consulta {
                 break;
             }
             case Help.PRODUCTO + "_" + Help.ADD: {
-                System.out.println("LLEGANDO AL METODO PRODUCTO");
-                if (msj.getParametros().size() == Help.LENPARAM6) {
+                if (msj.getParametros().size() == Help.LENPARAM7) {
                     String nombre = msj.getParametros().get(0);
                     int codigo = Integer.parseInt(msj.getParametros().get(1).trim());
                     String descripcion = msj.getParametros().get(2);
-                    double precios = Double.parseDouble(msj.getParametros().get(3).trim());
+                    double precio = Double.parseDouble(msj.getParametros().get(3).trim());
                     int categoria_id = Integer.parseInt(msj.getParametros().get(4).trim());
                     int medida_id = Integer.parseInt(msj.getParametros().get(5).trim());
-                    Object[] responsse = NEGOCIO_PRODUCTO.guardar(nombre, codigo, descripcion, precios, categoria_id, medida_id);
+                    double cantidad_stock = Double.parseDouble(msj.getParametros().get(6).trim());
+                    Object[] responsse = NEGOCIO_PRODUCTO.guardar(nombre, codigo, descripcion, precio, categoria_id, medida_id);
+                    boolean isSuccess = (boolean) responsse[0];
                     String message = (String) responsse[1];
-                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase());
+                    String message_inventario = "";
+                    if(isSuccess){
+                        int id_producto = (int) responsse[2];
+                        message += " | ID: "+id_producto;
+                        responsse = NEGOCIO_INVENTARIO.guardar(id_producto, 1, cantidad_stock);
+                        responsse = NEGOCIO_INVENTARIO.guardar(id_producto, 2, 0);
+                        message_inventario = (String) responsse[1].toString();
+                    }
+                    sendMail(msj.getEmisor(), msj.evento(), message.toUpperCase()+" | "+message_inventario.toString());
                 } else {
                     sendMail(msj.getEmisor(), PARAMETROS_INCORRECTOS, erorrLengthParametros(msj));
                 }
@@ -1286,12 +1322,4 @@ public class Consulta {
         Smtp smtp = new Smtp(ConstGlobal.SERVIDOR, ConstGlobal.PORT_SMPT);
         smtp.sendMailWithPdf(ConstGlobal.EMAIL, "<" + rcpt + ">", titulo, mensaje, name_pdfFile);
     }
-
-    private void generatePDF() {
-
-    }
-
-    /*private void reporte(String[] header, String[] cu, Mensaje msj) throws IOException {
-        sendMail(msj.getEmisor(), msj.evento(), body);
-    }*/
 }
