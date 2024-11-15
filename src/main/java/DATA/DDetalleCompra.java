@@ -79,6 +79,12 @@ public class DDetalleCompra {
         this.id = id;
     }
 
+    public DDetalleCompra(int compra_id, int producto_id) {
+        this.compra_id = compra_id;
+        this.producto_id = producto_id;
+    }  
+    
+
     public DDetalleCompra() {
     }
 
@@ -99,12 +105,15 @@ public class DDetalleCompra {
 
     private final String TABLE = "detallecompra";
     private final String QUERY_ID = "id_detallecompra";
+    private final String COMPRA_ID = "compra_id";
+    private final String PRODUCTO_ID = "producto_id";
     private final String QUERY_INSERT = String.format(
             "INSERT INTO %s (cantidad, precio_unitario, subtotal, compra_id, producto_id) VALUES (?,?,?,?,?)", TABLE);
     private final String QUERY_UPDATE = String.format(
             "UPDATE %s SET cantidad=?, precio_unitario=?, subtotal=? WHERE %s=?", TABLE, QUERY_ID);
     private final String QUERY_ELIMINAR = String.format("DELETE FROM %s WHERE %s=?", TABLE, QUERY_ID);
     private final String QUERY_VER = String.format("SELECT * FROM %s WHERE %s=?", TABLE, QUERY_ID);
+    private final String QUERY_VER_FROM_COMPRA_PRODUCTO = String.format("SELECT * FROM %s WHERE %s=? AND $s=?", TABLE, COMPRA_ID, PRODUCTO_ID);
     private final String QUERY_LIST = "SELECT * FROM " + TABLE;
     private final String QUERY_LIST_TO_COMPRA = "SELECT detallecompra.*, producto.nombre AS nombre_producto " +
             "FROM " + TABLE + " " +
@@ -172,6 +181,7 @@ public class DDetalleCompra {
         boolean isSuccess = false;
         String mensaje = "";
         try {
+            
             init_conexion();
             ps = connection.connect().prepareStatement(QUERY_INSERT);
             preparerState();
@@ -384,6 +394,38 @@ public class DDetalleCompra {
             ps = connection.connect().prepareStatement(QUERY_VER);
             ps.setInt(1, getId());
             //ps.setInt(2,getCi());
+            set = ps.executeQuery();
+            if (set.next()) {
+                data = arrayData(set);
+            }
+        } catch (SQLException e) {
+            // Muestra detalles de la excepción SQL
+            System.err.println("Error de SQL: " + e.getMessage());
+            System.err.println("Estado SQL: " + e.getSQLState());
+            System.err.println("Código de Error: " + e.getErrorCode());
+            e.printStackTrace(); // Imprime la pila de llamadas para más detalles
+        } finally {
+            try {
+                if (set != null) {
+                    set.close();
+                }
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException e) {
+                System.err.println("Error al cerrar recursos: " + e.getMessage());
+            }
+        }
+        return data;
+    }
+    
+    public String[] existe_compra_producto() {
+        String[] data = null;
+        try {
+            init_conexion();
+            ps = connection.connect().prepareStatement(QUERY_VER_FROM_COMPRA_PRODUCTO);
+            ps.setInt(1, getCompra_id());
+            ps.setInt(2,getProducto_id());
             set = ps.executeQuery();
             if (set.next()) {
                 data = arrayData(set);

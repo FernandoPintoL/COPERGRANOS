@@ -115,11 +115,11 @@ public class CORPEGRANOSVIEW extends JFrame {
     }
 
     private void stopListening() {
-        System.out.println("DETENIENDO ESCUCHAS....");
         listening = false;
         if (listenThread != null) {
             listenThread.interrupt();
         }
+        System.out.println("DETENIENDO ESCUCHAS....");
     }
 
     public static void main(String[] args) {

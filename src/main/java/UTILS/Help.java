@@ -267,7 +267,7 @@ public class Help {
 
         //PRODUCTO #6
         CasosUso producto = new CasosUso("CU6. GESTIONAR PRODUCTO ");
-        producto.addCaso(new Option("GUARDAR PRODUCTO", PRODUCTO+"_ADD[nombre,codigo,descripcion,precio,categoria_id,medida_id];"));
+        producto.addCaso(new Option("GUARDAR PRODUCTO", PRODUCTO+"_ADD[nombre,codigo,descripcion,precio,categoria_id,medida_id,cantidad_stock];"));
         producto.addCaso(new Option("MODIFICAR PRODUCTO", PRODUCTO+"_MOD[id_producto,nombre,codigo,descripcion,precio,categoria_id,medida_id];"));
         producto.addCaso(new Option("ELIMINAR PRODUCTO", PRODUCTO+"_DEL[id_producto];"));
         producto.addCaso(new Option("VER PRODUCTO", PRODUCTO+"_VER[id_producto];"));
@@ -301,7 +301,7 @@ public class Help {
         //DETALLECOMPRA #7
         CasosUso detallecompra = new CasosUso("CU7. GESTIONAR DETALLE COMPRA ");
         detallecompra.addCaso(new Option("GUARDAR DETALLE COMPRA", DETALLECOMPRA + "_ADD[compra_id, producto_id, cantidad];"));
-        detallecompra.addCaso(new Option("MODIFICAR DETALLE COMPRA", DETALLECOMPRA + "_MOD[id_detallecompra,cantidad,precio_unitario,subtotal];"));
+        detallecompra.addCaso(new Option("MODIFICAR DETALLE COMPRA", DETALLECOMPRA + "_MOD[id_detallecompra,cantidad];"));
         detallecompra.addCaso(new Option("ELIMINAR DETALLE COMPRA", DETALLECOMPRA + "_DEL[id_detallecompra];"));
         detallecompra.addCaso(new Option("VER DETALLE COMPRA", DETALLECOMPRA + "_VER[id_detallecompra];"));
         detallecompra.addCaso(new Option("LISTAR DETALLE COMPRA", DETALLECOMPRA + "_LIS[];"));

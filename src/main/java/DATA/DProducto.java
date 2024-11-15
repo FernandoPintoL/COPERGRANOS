@@ -106,6 +106,7 @@ public class DProducto {
             "UPDATE %s SET nombre=?, codigo=?, descripcion=?, precio=? WHERE %s=?", TABLE, QUERY_ID);
     private final String QUERY_ELIMINAR = String.format("DELETE FROM %s WHERE %s=?", TABLE, QUERY_ID);
     private final String QUERY_VER = String.format("SELECT * FROM %s WHERE %s=? OR  %s=?", TABLE, QUERY_ID, CODIGO);
+    private final String QUERY_VER_ID_OR_CODIGO = String.format("SELECT * FROM %s WHERE %s=? OR  %s=?", TABLE, QUERY_ID, CODIGO);
     private final String QUERY_LIST = "SELECT * FROM " + TABLE;
     private final String MESSAGE_TRYCATCH = "ERROR MODELO: " + TABLE.toUpperCase() + " ";
     private SQLConnection connection;
@@ -155,11 +156,12 @@ public class DProducto {
     public Object[] guardar() throws SQLException, ParseException {
         boolean isSuccess = false;
         String mensaje = "";
+        int id_generado = -1;
         try {
-            String[] exists = ver();
-            if(exists == null){
-                System.out.println(MESSAGE_TRYCATCH+" NO EXISTE");
-                return new Object[]{false, "IDS INGRESADOS NO SE ENCUENTRAN REGISTRADADAS EN LA TABLA: "+TABLE.toUpperCase()};
+            String[] exists = exists_id_or_codigo();
+            if(exists != null){
+                System.out.println(MESSAGE_TRYCATCH+" EXISTE");
+                return new Object[]{false, "IDS INGRESADOS YA SE ENCUENTRAN REGISTRADADAS EN LA TABLA: "+TABLE.toUpperCase()};
             }
             init_conexion();
             ps = connection.connect().prepareStatement(QUERY_INSERT);
@@ -170,6 +172,7 @@ public class DProducto {
             isSuccess = execute > 0;
             if (isSuccess) {
                 mensaje = TABLE+" Registro insertado exitosamente.".toUpperCase();
+                id_generado = obtenerUltimoId();
             } else {
                 mensaje = MESSAGE_TRYCATCH+" Error al intentar guardar los datos.".toUpperCase();
                 //throw new SQLException("No se pudo insertar el registro en la base de datos.".toUpperCase());
@@ -193,7 +196,23 @@ public class DProducto {
                 mensaje = MESSAGE_TRYCATCH+" (GUARDAR) Error al cerrar PreparedStatement: " + TABLE + e.getMessage();
             }
         }
-        return new Object[]{isSuccess, mensaje};
+        return new Object[]{isSuccess, mensaje, id_generado};
+    }
+
+    public int obtenerUltimoId() throws SQLException {
+        int ultimoId = -1;
+        String query = "SELECT id_producto FROM producto ORDER BY id_producto DESC LIMIT 1";
+        try {
+            ps = connection.connect().prepareStatement(query);
+            set = ps.executeQuery();
+            if (set.next()) {
+                ultimoId = set.getInt(1);
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener el último ID: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return ultimoId;
     }
 
     public Object[] modificar() throws SQLException, ParseException {
@@ -306,6 +325,40 @@ public class DProducto {
             }
         }
         return datas;
+    }
+    
+    public String[] exists_id_or_codigo() {
+        String[] data = null;
+        try {
+            init_conexion();
+            ps = connection.connect().prepareStatement(QUERY_VER_ID_OR_CODIGO);
+            ps.setInt(1, getId());
+            ps.setInt(2, getCodigo());
+            set = ps.executeQuery();
+            if (set.next()) {
+                System.out.println("SET: " + set);
+                data = arrayData(set);
+                System.out.println("DATA: " + Arrays.toString(data));
+            }
+        } catch (SQLException e) {
+            // Muestra detalles de la excepción SQL
+            System.err.println("Error de SQL: " + e.getMessage());
+            System.err.println("Estado SQL: " + e.getSQLState());
+            System.err.println("Código de Error: " + e.getErrorCode());
+            e.printStackTrace(); // Imprime la pila de llamadas para más detalles
+        } finally {
+            try {
+                if (set != null) {
+                    set.close();
+                }
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException e) {
+                System.err.println("Error al cerrar recursos: " + e.getMessage());
+            }
+        }
+        return data;
     }
 
     public String[] ver() {

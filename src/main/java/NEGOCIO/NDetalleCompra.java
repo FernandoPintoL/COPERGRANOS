@@ -62,4 +62,11 @@ public class NDetalleCompra {
         DATA_DETALLECOMPRA.desconectar();
         return data;
     }
+    
+    public String[] existe_compra_producto(int compra_id, int producto_id) throws SQLException {
+        DATA_DETALLECOMPRA = new DDetalleCompra(compra_id, producto_id);
+        String[] data = DATA_DETALLECOMPRA.existe_compra_producto();
+        DATA_DETALLECOMPRA.desconectar();
+        return data;
+    }
 }

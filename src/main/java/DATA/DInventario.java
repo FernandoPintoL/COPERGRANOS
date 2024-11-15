@@ -6,21 +6,24 @@ import java.util.*;
 import java.sql.Date;
 import UTILS.ConstPSQL;
 import UTILS.ConstGlobal;
+
+import javax.sound.midi.spi.SoundbankReader;
 import java.text.ParseException;
+import java.time.LocalDate;
 
 public class DInventario {
 
-    private int id;
+    private int producto_id;
     private int almacen_id;
     private double stock;
     private Date fecha;
 
-    public int getId() {
-        return id;
+    public int getProductoId() {
+        return producto_id;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setProductoId(int id) {
+        this.producto_id = id;
     }
 
     public int getAlmacen_id() {
@@ -40,11 +43,19 @@ public class DInventario {
     }
 
     public Date getFecha() {
-        return fecha;
+        if (this.fecha == null || this.fecha.toString().length() == 0) {
+            return Date.valueOf(LocalDate.now());
+        } else {
+            return fecha;
+        }
     }
 
     public void setFecha(Date fecha) {
-        this.fecha = fecha;
+        if (fecha == null || fecha.toString().length() == 0) {
+            this.fecha = Date.valueOf(LocalDate.now());
+        } else {
+            this.fecha = fecha;
+        }
     }
 
     public DInventario() {
@@ -52,20 +63,20 @@ public class DInventario {
     
 
     public DInventario(int id, int almacen_id, double stock) {
-        this.id = id;
+        this.producto_id = id;
         this.almacen_id = almacen_id;
         this.stock = stock;
     }
 
     public DInventario(int id, int almacen_id, double stock, Date fecha) {
-        this.id = id;
+        this.producto_id = id;
         this.almacen_id = almacen_id;
         this.stock = stock;
         this.fecha = fecha;
     }
 
     public DInventario(int id, int almacen_id) {
-        this.id = id;
+        this.producto_id = id;
         this.almacen_id = almacen_id;
     }
 
@@ -78,6 +89,7 @@ public class DInventario {
             "UPDATE %s SET stock=?, fecha=? WHERE %s=? AND %s=?", TABLE, PRODUCTO_ID, ALMACEN_ID);
     private final String QUERY_ELIMINAR = String.format("DELETE FROM %s WHERE %s=? AND %s=?", TABLE, PRODUCTO_ID, ALMACEN_ID);
     private final String QUERY_VER = String.format("SELECT * FROM %s WHERE %s=? AND %s=?", TABLE, PRODUCTO_ID, ALMACEN_ID);
+    private final String QUERY_VER_FROM_ALMACEN_PRODUCTO = String.format("SELECT * FROM %s WHERE %s=? AND %s=?", TABLE, PRODUCTO_ID, ALMACEN_ID);
     private final String QUERY_LIST = "SELECT * FROM " + TABLE;
     private final String QUERY_CHECK = String.format("SELECT COUNT(*) FROM %s WHERE %s=? AND %s=?", TABLE, PRODUCTO_ID, ALMACEN_ID);
     private final String MESSAGE_TRYCATCH = " ERROR MODELO: " + TABLE.toUpperCase() + " ";
@@ -93,7 +105,6 @@ public class DInventario {
             String.valueOf(set.getDate("fecha"))
         };
     }
-
     void preparerState() throws SQLException {
         try {
             // Intentar establecer los valores
@@ -126,7 +137,7 @@ public class DInventario {
             init_conexion();
             ps = connection.connect().prepareStatement(QUERY_INSERT);
             preparerState();
-            ps.setInt(3, getId());
+            ps.setInt(3, getProductoId());
             ps.setInt(4, getAlmacen_id());
             int execute = ps.executeUpdate();
             isSuccess = execute > 0;
@@ -157,14 +168,13 @@ public class DInventario {
         }
         return new Object[]{isSuccess, mensaje};
     }
-
     public boolean checkId() throws SQLException, ParseException {
         boolean isSuccess = false;
         try {
             init_conexion();
             // Verificar si el id y almacen_id existen en la tabla
             ps = connection.connect().prepareStatement(QUERY_CHECK);
-            ps.setInt(1, getId());
+            ps.setInt(1, getProductoId());
             ps.setInt(2, getAlmacen_id());
             set = ps.executeQuery();
             if (set.next() && set.getInt(1) == 0) {
@@ -196,6 +206,39 @@ public class DInventario {
         return isSuccess;
     }
 
+    public String[] getId_From_Alm_Prod(){
+        String[] data = null;
+        try {
+            init_conexion();
+            ps = connection.connect().prepareStatement(QUERY_VER_FROM_ALMACEN_PRODUCTO);
+            ps.setInt(1, getProductoId());
+            ps.setInt(2, getAlmacen_id());
+            set = ps.executeQuery();
+            if (set.next()) {
+                data = arrayData(set);
+            }
+            System.out.println("DATA: "+ Arrays.toString(data));
+        } catch (SQLException e) {
+            // Muestra detalles de la excepción SQL
+            System.err.println("Error de SQL: " + e.getMessage());
+            System.err.println("Estado SQL: " + e.getSQLState());
+            System.err.println("Código de Error: " + e.getErrorCode());
+            e.printStackTrace(); // Imprime la pila de llamadas para más detalles
+        } finally {
+            try {
+                if (set != null) {
+                    set.close();
+                }
+                if (ps != null) {
+                    ps.close();
+                }
+            } catch (SQLException e) {
+                System.err.println("Error al cerrar recursos: " + e.getMessage());
+            }
+        }
+        return data;
+    }
+
     public Object[] modificar() throws SQLException, ParseException {
         boolean isSuccess = false;
         String mensaje = "";
@@ -204,10 +247,23 @@ public class DInventario {
             if (!isCheckedId) {
                 return new Object[]{isCheckedId, "IDS INGRESADOS NO SE ENCUENTRAN REGISTRADADAS EN LA TABLA: "+TABLE.toUpperCase()};
             }
+            String[] inventario = getId_From_Alm_Prod();
+            if (inventario == null) {
+                System.out.println("EL INVENTARIO NO EXISTE");
+                return new Object[]{false, "EL INVENTARIO NO EXISTE"};
+            }
+            Double inventario_stock = Double.parseDouble(inventario[2]);
+            if(inventario_stock < getStock()){
+                return new Object[]{false, "NO SE PUEDE MODIFICAR EL STOCK A UN VALOR MAYOR AL ACTUAL, NO EXISTE LA CANTIDAD SUFICIENTE"};
+            }
+            System.out.println("ANTES DE RESTAR EL CALCULO: "+getStock());
+            Double stock_calculado = inventario_stock - getStock();
+            setStock(stock_calculado);
+            System.out.println("DESPUES DE REALIZAR EL CALCULO: "+getStock());
             init_conexion();
             ps = connection.connect().prepareStatement(QUERY_UPDATE);
             preparerState();
-            ps.setInt(3, getId());
+            ps.setInt(3, getProductoId());
             ps.setInt(4, getAlmacen_id());
             int execute = ps.executeUpdate();
             isSuccess = execute > 0;
@@ -248,7 +304,7 @@ public class DInventario {
             }
             init_conexion();
             ps = connection.connect().prepareStatement(QUERY_ELIMINAR);
-            ps.setInt(1, getId());
+            ps.setInt(1, getProductoId());
             if (ps.executeUpdate() == 0) {
                 eliminado = false;
                 System.err.println(MESSAGE_TRYCATCH + " No se pudo eliminar la persona");
@@ -313,7 +369,7 @@ public class DInventario {
         try {
             init_conexion();
             ps = connection.connect().prepareStatement(QUERY_VER);
-            ps.setInt(1, getId());
+            ps.setInt(1, getProductoId());
             //ps.setInt(2,getCi());
             set = ps.executeQuery();
             if (set.next()) {
